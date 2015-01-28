@@ -89,7 +89,7 @@ func main() {
 			if err != nil {
 				fmt.Println(err)
 			} else {
-				fmt.Println("Задача запущена")
+				fmt.Println("Issue started")
 			}
 		}
 
