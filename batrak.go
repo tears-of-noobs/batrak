@@ -1,9 +1,16 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"gojira"
+	"io/ioutil"
+	"os"
+	"strconv"
+	"strings"
+	"time"
 )
 
 func PrintIssues(user string) {
@@ -21,7 +28,11 @@ func PrintIssues(user string) {
 	}
 
 	for _, issue := range jiraIssues.Issues {
-		fmt.Printf("%15s %13s %s\n", issue.Key,
+		var started string
+		if checkActive(issue.Key) {
+			started = "*"
+		}
+		fmt.Printf("%2s %10s %13s %s\n", started, issue.Key,
 			issue.Fields.Status.Name, issue.Fields.Summary)
 	}
 
@@ -49,6 +60,7 @@ func PrintTransitionsOfIssue(jiraKey string) {
 	issue, err := gojira.GetIssue(jiraKey)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
 	transitions, err := issue.GetTransitions()
@@ -57,6 +69,89 @@ func PrintTransitionsOfIssue(jiraKey string) {
 	}
 	for _, transition := range transitions.Transitions {
 		fmt.Printf("%3s %s \n", transition.Id, transition.To.Name)
+	}
+
+}
+
+func checkActive(issueKey string) bool {
+	issueTmpFile := tmpDir + issueKey
+	_, err := os.Stat(issueTmpFile)
+	if err != nil {
+		return false
+	} else {
+		return true
+	}
+
+}
+
+func checkCurrentIssuesInProgress() bool {
+	fileInfo, err := ioutil.ReadDir(tmpDir)
+	if err != nil {
+		panic(err)
+	}
+	if (len(fileInfo)) > 0 {
+		return true
+	} else {
+		return false
+	}
+
+}
+func startProgress(issueKey string) error {
+	if checkActive(issueKey) {
+		return errors.New("Issue already started")
+	}
+	if checkCurrentIssuesInProgress() {
+		return errors.New("You alredy have started issue")
+	}
+	_, err := os.Create(tmpDir + issueKey)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func termProgress(issueKey string) error {
+	if checkActive(issueKey) {
+		fi, err := os.Stat(tmpDir + issueKey)
+		if err != nil {
+			return err
+		}
+		dur := time.Now().Sub(fi.ModTime())
+		wlHours := strconv.FormatFloat(dur.Hours(), 'f', 0, 64)
+		wlMinutes := strconv.FormatFloat(dur.Minutes(), 'f', 0, 64)
+		wlTotal := fmt.Sprintf("%sh %sm", wlHours, wlMinutes)
+		err = os.Remove(tmpDir + issueKey)
+		workLog(issueKey, wlTotal)
+		if err != nil {
+			return err
+		}
+		return nil
+	} else {
+		return errors.New("Selected issue not started")
+	}
+}
+
+func workLog(issueKey, worklogTime string) error {
+	issue, err := gojira.GetIssue(issueKey)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Printf("You have worked %s\n", worklogTime)
+	fmt.Println("Would you like log your work time?")
+	reader := bufio.NewReader(os.Stdin)
+	text, _ := reader.ReadString('\n')
+	if strings.Trim(strings.ToUpper(text), "\n") == "Y" {
+		fmt.Println("Enter description by one line")
+		logReader := bufio.NewReader(os.Stdin)
+		log, _ := logReader.ReadString('\n')
+		err = issue.SetWorklog(worklogTime, log)
+		if err != nil {
+			return err
+		}
+		return nil
+	} else {
+		fmt.Println("Stop without logging")
+		return nil
 	}
 
 }

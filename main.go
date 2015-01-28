@@ -5,11 +5,13 @@ import (
 	"gojira"
 	"os"
 	"os/user"
+	"strings"
 
 	"github.com/docopt/docopt.go"
 )
 
 var projectName string
+var tmpDir = "/tmp/batrak/"
 var arguments map[string]interface{}
 
 func init() {
@@ -17,11 +19,14 @@ func init() {
 	
 	Usage:
 		batrak (-L | --list) [-n NAME]
-		batrak (-T | --transitions) [-n NAME]
+		batrak (-M | --move) [-n NAME]
+		batrak (-S | --start) [-n NAME]
+		batrak (-T | --terminate) [-n NAME]
 
 	Commands:
 		-L --list     List of last 10 issues assignee to logged username
-		-T --transitions  List of available transitions for issue`
+		-M --move  List of available transitions for issue
+		-S --start  Start progress on issue`
 
 	arguments, _ = docopt.Parse(usage, nil, true, "Batrak 1.0", false)
 }
@@ -48,22 +53,46 @@ func main() {
 	if err != nil {
 		fmt.Printf("%s\n", err)
 	}
-	//fmt.Printf("%v\n", user.Name)
+	var jiraTag string
+	if arguments["-n"].(bool) == true {
+		jiraTag = arguments["NAME"].(string)
+		if !strings.Contains(jiraTag, projectName) {
+			jiraTag = fmt.Sprintf("%s-%s", projectName, jiraTag)
+		}
+	}
 
 	if arguments["-L"].(bool) == true || arguments["--list"].(bool) == true {
 		if arguments["-n"].(bool) == true {
-			jiraTag := arguments["NAME"].(string)
 			PrintIssueByKey(jiraTag)
 		} else {
 			PrintIssues(user.Name)
 		}
 	}
 
-	if arguments["-T"].(bool) == true || arguments["--transitions"].(bool) == true {
+	if arguments["-M"].(bool) == true || arguments["--move"].(bool) == true {
 		if arguments["-n"].(bool) == true {
-			jiraTag := arguments["NAME"].(string)
 			PrintTransitionsOfIssue(jiraTag)
 		}
+	}
+	if arguments["-T"].(bool) == true || arguments["--terminate"].(bool) == true {
+		if arguments["-n"].(bool) == true {
+			err := termProgress(jiraTag)
+			if err != nil {
+				fmt.Println(err)
+			}
+		}
+	}
+
+	if arguments["-S"].(bool) == true || arguments["--start"].(bool) == true {
+		if arguments["-n"].(bool) == true {
+			err := startProgress(jiraTag)
+			if err != nil {
+				fmt.Println(err)
+			} else {
+				fmt.Println("Задача запущена")
+			}
+		}
+
 	}
 
 }
