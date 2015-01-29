@@ -13,6 +13,7 @@ import (
 
 var projectName string
 var workflow []Stage
+var filterId int
 var tmpDir = "/tmp/batrak/"
 var arguments map[string]interface{}
 
@@ -53,6 +54,7 @@ func main() {
 	gojira.BaseUrl = config.JiraApiUrl
 	projectName = config.ProjectName
 	workflow = config.Workflow
+	filterId = config.Filter
 
 	user, err := gojira.Myself()
 	if err != nil {

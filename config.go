@@ -11,7 +11,8 @@ type Configuration struct {
 	Password    string  `toml:"password"`
 	JiraApiUrl  string  `toml:"jira_api_url"`
 	ProjectName string  `toml:"project_name"`
-	Workflow    []Stage `toml: "workflow"`
+	Workflow    []Stage `toml:"workflow"`
+	Filter      int     `toml:"filter_id"`
 }
 
 type Stage struct {
