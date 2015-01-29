@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
-	"gojira"
 	"os"
 	"os/user"
 	"strings"
+
+	"github.com/tears-of-noobs/gojira"
 
 	"github.com/docopt/docopt.go"
 )
