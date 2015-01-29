@@ -19,5 +19,5 @@ build() {
 package() {
     cd "${srcdir}/${pkgname}"
 
-    install -Dm 0755 "out/dbfarmd" "${pkgdir}/usr/bin/batrak"
+    install -Dm 0755 "out/batrak" "${pkgdir}/usr/bin/batrak"
 }
