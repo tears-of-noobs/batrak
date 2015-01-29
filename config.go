@@ -7,10 +7,16 @@ import (
 )
 
 type Configuration struct {
-	Username    string `toml:"username"`
-	Password    string `toml:"password"`
-	JiraApiUrl  string `toml:"jira_api_url"`
-	ProjectName string `toml:"project_name"`
+	Username    string  `toml:"username"`
+	Password    string  `toml:"password"`
+	JiraApiUrl  string  `toml:"jira_api_url"`
+	ProjectName string  `toml:"project_name"`
+	Workflow    []Stage `toml: "workflow"`
+}
+
+type Stage struct {
+	Name  string `toml: "name"`
+	Order int    `toml: "order"`
 }
 
 func ReadConfig(filePath string) (*Configuration, error) {

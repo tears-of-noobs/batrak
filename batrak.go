@@ -17,18 +17,14 @@ import (
 )
 
 func statusOrder(iss gojira.Issue) int {
-	switch iss.Fields.Status.Name {
-	case "В разработке":
-		return 1
-	case "Открыта":
-		return 2
-	case "Завершена":
-		return 3
-	case "Отклонена":
-		return 3
-	default:
-		return 0
+	for _, stage := range workflow {
+		if stage.Name == iss.Fields.Status.Name {
+			return stage.Order
+		}
 	}
+
+	fmt.Println("Unknow workflow stage:", iss.Fields.Status.Name)
+	return -1
 }
 
 type sortByStatus []gojira.Issue
