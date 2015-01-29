@@ -45,16 +45,16 @@ func PrintIssueByKey(jiraKey string) {
 	if err != nil {
 		fmt.Println(err)
 	}
-	fmt.Printf("Задача: %s\n", issue.Key)
-	fmt.Printf("Статус: %s\n", issue.Fields.Status.Name)
-	fmt.Printf("Название: %s\n\n", issue.Fields.Summary)
+	fmt.Printf("Issue: %s\n", issue.Key)
+	fmt.Printf("Status: %s\n", issue.Fields.Status.Name)
+	fmt.Printf("Summary: %s\n\n", issue.Fields.Summary)
 	var desc string
 	if issue.Fields.Description != nil {
 		desc = issue.Fields.Description.(string)
 	} else {
-		desc = "Нет описания"
+		desc = "No description"
 	}
-	fmt.Printf("Описание: \n%s\n", desc)
+	fmt.Printf("Description: \n%s\n", desc)
 
 }
 
@@ -105,15 +105,45 @@ func startProgress(issueKey string) error {
 	if checkCurrentIssuesInProgress() {
 		return errors.New("You alredy have started issue")
 	}
-	_, err := os.Create(tmpDir + issueKey)
+	issue, err := gojira.GetIssue(issueKey)
 	if err != nil {
 		return err
 	}
+	_, err = os.Create(tmpDir + issueKey)
+
+	if err != nil {
+		return err
+	}
+
+	err = issue.AddLabel(makeLabelsForJwh())
+	if err != nil {
+		return err
+	}
+
 	return nil
+}
+
+// This function use only in our NGS workflow
+func makeLabelsForJwh() []string {
+	jwhTs := time.Now().Unix()
+	jwhUser := gojira.Username
+	jwhTag := "in-work"
+
+	tsLabel := fmt.Sprintf("jwh:%s:%d", jwhUser, jwhTs)
+	userLabel := fmt.Sprintf("jwh:%s:%s", jwhUser, jwhTag)
+	tagLabel := fmt.Sprintf("jwh:%s", jwhTag)
+	labels := []string{tsLabel, userLabel, tagLabel}
+
+	return labels
 }
 
 func termProgress(issueKey string) error {
 	if checkActive(issueKey) {
+		issue, err := gojira.GetIssue(issueKey)
+		if err != nil {
+			return err
+		}
+
 		fi, err := os.Stat(tmpDir + issueKey)
 		if err != nil {
 			return err
@@ -127,6 +157,19 @@ func termProgress(issueKey string) error {
 		if err != nil {
 			return err
 		}
+		labels := issue.GetLabels()
+		var jwhLabels []string
+		for _, lb := range labels {
+			if strings.Contains(lb, "jwh:") {
+				jwhLabels = append(jwhLabels, lb)
+			}
+		}
+
+		err = issue.RemoveLabel(jwhLabels)
+		if err != nil {
+			return err
+		}
+
 		return nil
 	} else {
 		return errors.New("Selected issue not started")
