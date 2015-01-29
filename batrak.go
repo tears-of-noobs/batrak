@@ -171,3 +171,23 @@ func moveIssue(issueKey, transitionId string) error {
 
 	return nil
 }
+
+func printComments(issueKey string) {
+	issue, err := gojira.GetIssue(issueKey)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	comments, err := issue.GetComments()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	for _, comment := range comments.Comments {
+		fmt.Printf("\n################\n")
+		fmt.Printf("Author: %s\n", comment.Author.DisplayName)
+		fmt.Printf("Update: %s\n", comment.Updated)
+		fmt.Printf("Comment: \n%s\n", comment.Body)
+	}
+
+}

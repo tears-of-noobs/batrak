@@ -20,6 +20,7 @@ func init() {
 	
 	Usage:
 		batrak (-L | --list) [-n NAME]
+		batrak (-L | --list) [-C] [-n NAME]
 		batrak (-M | --move) [-n NAME]
 		batrak (-M | --move) [-n NAME] <TRANSITION>
 		batrak (-S | --start) [-n NAME]
@@ -34,7 +35,7 @@ func init() {
 }
 
 func main() {
-	//	fmt.Printf("%s\n", arguments)
+	//fmt.Printf("%s\n", arguments)
 	usr, err := user.Current()
 	if err != nil {
 		fmt.Println(err)
@@ -58,14 +59,22 @@ func main() {
 	var jiraTag string
 	if arguments["-n"].(bool) == true {
 		jiraTag = arguments["NAME"].(string)
-		if !strings.Contains(jiraTag, projectName) {
-			jiraTag = fmt.Sprintf("%s-%s", projectName, jiraTag)
+		tokens := strings.Split(jiraTag, "-")
+		if len(tokens) < 2 {
+			if !strings.Contains(jiraTag, projectName) {
+				jiraTag = fmt.Sprintf("%s-%s", projectName, jiraTag)
+			}
+
 		}
 	}
 
 	if arguments["-L"].(bool) == true || arguments["--list"].(bool) == true {
 		if arguments["-n"].(bool) == true {
-			PrintIssueByKey(jiraTag)
+			if arguments["-C"].(bool) == true {
+				printComments(jiraTag)
+			} else {
+				PrintIssueByKey(jiraTag)
+			}
 		} else {
 			PrintIssues(user.Name)
 		}
