@@ -11,8 +11,7 @@ import (
 	"github.com/docopt/docopt.go"
 )
 
-var projectName string
-var workflow []Stage
+var config *Configuration
 var tmpDir = "/tmp/batrak/"
 var arguments map[string]interface{}
 
@@ -43,7 +42,7 @@ func main() {
 		os.Exit(1)
 	}
 	configPath := fmt.Sprintf("%s/.batrakrc", usr.HomeDir)
-	config, err := ReadConfig(configPath)
+	config, err = ReadConfig(configPath)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -51,8 +50,6 @@ func main() {
 	gojira.Username = config.Username
 	gojira.Password = config.Password
 	gojira.BaseUrl = config.JiraApiUrl
-	projectName = config.ProjectName
-	workflow = config.Workflow
 
 	user, err := gojira.Myself()
 	if err != nil {
@@ -63,8 +60,8 @@ func main() {
 		jiraTag = arguments["NAME"].(string)
 		tokens := strings.Split(jiraTag, "-")
 		if len(tokens) < 2 {
-			if !strings.Contains(jiraTag, projectName) {
-				jiraTag = fmt.Sprintf("%s-%s", projectName, jiraTag)
+			if !strings.Contains(jiraTag, config.ProjectName) {
+				jiraTag = fmt.Sprintf("%s-%s", config.ProjectName, jiraTag)
 			}
 
 		}

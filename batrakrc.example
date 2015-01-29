@@ -1,0 +1,41 @@
+username = "JIRA_USERNAME"
+password = "JIRA_PASSWORD"
+jira_api_url = "http://JIRA_HOST/rest/api/2"
+project_name = "TEST"
+
+[workflow]
+    
+    [[workflow.stage]]
+        name = "В разработке"
+        order = 1
+    [[workflow.stage]]
+        name = "На анализе"
+        order = 2
+    [[workflow.stage]]
+        name = "На ревью"
+        order = 2
+    [[workflow.stage]]
+        name = "Интеграция"
+        order = 3
+    [[workflow.stage]]
+        name = "Открыта"
+        order = 3
+    [[workflow.stage]]
+        name = "Завершена"
+        order = 4
+    [[workflow.stage]]
+        name = "Отклонена"
+        order = 4
+    [[workflow.stage]]
+        name = "Fixed"
+        order = 5
+    [[workflow.stage]]
+        name = "Awaiting thorough fix"
+        order = 5
+
+[hooks]
+
+pre_start = ["jwh-start"]
+post_start = []
+pre_stop = []
+post_stop = ["jwh-stop"]

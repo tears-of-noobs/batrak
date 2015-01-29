@@ -2,18 +2,31 @@ package main
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/BurntSushi/toml"
 )
 
 type Configuration struct {
-	Username    string  `toml:"username"`
-	Password    string  `toml:"password"`
-	JiraApiUrl  string  `toml:"jira_api_url"`
-	ProjectName string  `toml:"project_name"`
-	Workflow    []Stage `toml: "workflow"`
+	Username    string   `toml:"username"`
+	Password    string   `toml:"password"`
+	JiraApiUrl  string   `toml:"jira_api_url"`
+	ProjectName string   `toml:"project_name"`
+	Workflow    Workflow `toml: "workflow"`
+	Hooks       Hooks    `toml:"hooks"`
 }
 
+type Hooks struct {
+	PreStart  []string `toml:"pre_start"`
+	PostStart []string `toml:"post_start"`
+	PreStop   []string `toml:"pre_stop"`
+	PostStop  []string `toml:"post_stop"`
+}
+
+type Workflow struct {
+	AgileFields []string `toml:"agile_fields"`
+	Stage       []Stage  `toml:"stage"`
+}
 type Stage struct {
 	Name  string `toml: "name"`
 	Order int    `toml: "order"`
@@ -46,4 +59,11 @@ func (c *Configuration) testConfig() error {
 		return errors.New(" Project name is empty")
 	}
 	return nil
+}
+
+func (c *Configuration) ExportToHook() string {
+	return fmt.Sprintf("%s*%s*%s",
+		c.Username,
+		c.Password,
+		c.JiraApiUrl)
 }

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"sort"
 	"strconv"
 	"strings"
@@ -17,7 +18,7 @@ import (
 )
 
 func statusOrder(iss gojira.Issue) int {
-	for _, stage := range workflow {
+	for _, stage := range config.Workflow.Stage {
 		if stage.Name == iss.Fields.Status.Name {
 			return stage.Order
 		}
@@ -36,7 +37,7 @@ func (v sortByStatus) Less(i, j int) bool {
 }
 
 func PrintIssues(user string) {
-	searchString := "project%20%3D%20" + projectName +
+	searchString := "project%20%3D%20" + config.ProjectName +
 		"%20AND%20assignee%20%3D%20" + user + "%20order%20by%20updated%20DESC" +
 		"&fields=key,summary,status&maxResults=1000"
 	result, err := gojira.RawSearch(searchString)
@@ -129,7 +130,7 @@ func startProgress(issueKey string) error {
 	if checkCurrentIssuesInProgress() {
 		return errors.New("You alredy have started issue")
 	}
-	issue, err := gojira.GetIssue(issueKey)
+	err := handleHooks("pre_start", issueKey)
 	if err != nil {
 		return err
 	}
@@ -138,8 +139,7 @@ func startProgress(issueKey string) error {
 	if err != nil {
 		return err
 	}
-
-	err = issue.AddLabel(makeLabelsForJwh())
+	err = handleHooks("post_start", issueKey)
 	if err != nil {
 		return err
 	}
@@ -147,23 +147,9 @@ func startProgress(issueKey string) error {
 	return nil
 }
 
-// This function use only in our NGS workflow
-func makeLabelsForJwh() []string {
-	jwhTs := time.Now().Unix()
-	jwhUser := gojira.Username
-	jwhTag := "in-work"
-
-	tsLabel := fmt.Sprintf("jwh:%s:%d", jwhUser, jwhTs)
-	userLabel := fmt.Sprintf("jwh:%s:%s", jwhUser, jwhTag)
-	tagLabel := fmt.Sprintf("jwh:%s", jwhTag)
-	labels := []string{tsLabel, userLabel, tagLabel}
-
-	return labels
-}
-
 func termProgress(issueKey string) error {
 	if checkActive(issueKey) {
-		issue, err := gojira.GetIssue(issueKey)
+		err := handleHooks("pre_stop", issueKey)
 		if err != nil {
 			return err
 		}
@@ -181,15 +167,7 @@ func termProgress(issueKey string) error {
 		if err != nil {
 			return err
 		}
-		labels := issue.GetLabels()
-		var jwhLabels []string
-		for _, lb := range labels {
-			if strings.Contains(lb, "jwh:") {
-				jwhLabels = append(jwhLabels, lb)
-			}
-		}
-
-		err = issue.RemoveLabel(jwhLabels)
+		err = handleHooks("post_stop", issueKey)
 		if err != nil {
 			return err
 		}
@@ -257,4 +235,38 @@ func printComments(issueKey string) {
 		fmt.Printf("Comment: \n%s\n", comment.Body)
 	}
 
+}
+
+func handleHooks(stageName, jiraKey string) error {
+	execHooks := func(hookName string) error {
+		fmt.Printf("Execute hook %s\n", hookName)
+		err := exec.Command(hookName, jiraKey, config.ExportToHook()).Run()
+		if err != nil {
+			return errors.New(fmt.Sprintf("Hook %s failed\n", hookName))
+		}
+		fmt.Printf("Hook %s successfully ended\n", hookName)
+		return nil
+	}
+	switch stageName {
+	case "pre_start":
+		for _, hookName := range config.Hooks.PreStart {
+			execHooks(hookName)
+		}
+	case "post_start":
+		for _, hookName := range config.Hooks.PostStart {
+			execHooks(hookName)
+		}
+	case "pre_stop":
+		for _, hookName := range config.Hooks.PreStop {
+			execHooks(hookName)
+		}
+	case "post_stop":
+		for _, hookName := range config.Hooks.PostStop {
+			execHooks(hookName)
+		}
+	default:
+		return errors.New("Unknown hooks stage")
+
+	}
+	return nil
 }
