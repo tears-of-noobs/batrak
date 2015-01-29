@@ -12,6 +12,7 @@ import (
 )
 
 var projectName string
+var workflow []Stage
 var tmpDir = "/tmp/batrak/"
 var arguments map[string]interface{}
 
@@ -51,6 +52,7 @@ func main() {
 	gojira.Password = config.Password
 	gojira.BaseUrl = config.JiraApiUrl
 	projectName = config.ProjectName
+	workflow = config.Workflow
 
 	user, err := gojira.Myself()
 	if err != nil {
