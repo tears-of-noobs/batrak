@@ -21,6 +21,7 @@ func init() {
 	Usage:
 		batrak (-L | --list) [-n NAME]
 		batrak (-M | --move) [-n NAME]
+		batrak (-M | --move) [-n NAME] <TRANSITION>
 		batrak (-S | --start) [-n NAME]
 		batrak (-T | --terminate) [-n NAME]
 
@@ -33,7 +34,7 @@ func init() {
 }
 
 func main() {
-	//fmt.Printf("%s\n", arguments)
+	//	fmt.Printf("%s\n", arguments)
 	usr, err := user.Current()
 	if err != nil {
 		fmt.Println(err)
@@ -72,7 +73,18 @@ func main() {
 
 	if arguments["-M"].(bool) == true || arguments["--move"].(bool) == true {
 		if arguments["-n"].(bool) == true {
-			PrintTransitionsOfIssue(jiraTag)
+			if arguments["<TRANSITION>"] != nil {
+				transId := arguments["<TRANSITION>"].(string)
+				err := moveIssue(jiraTag, transId)
+				if err != nil {
+					fmt.Println(err)
+				} else {
+					fmt.Println("Issue moved")
+				}
+
+			} else {
+				PrintTransitionsOfIssue(jiraTag)
+			}
 		}
 	}
 	if arguments["-T"].(bool) == true || arguments["--terminate"].(bool) == true {

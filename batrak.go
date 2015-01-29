@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -155,4 +156,18 @@ func workLog(issueKey, worklogTime string) error {
 		return nil
 	}
 
+}
+
+func moveIssue(issueKey, transitionId string) error {
+	issue, err := gojira.GetIssue(issueKey)
+	if err != nil {
+		fmt.Println(err)
+	}
+	var b = []byte(fmt.Sprintf(`{"transition": {"id": "%s"}}`, transitionId))
+	err = issue.SetTransition(bytes.NewBuffer(b))
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
