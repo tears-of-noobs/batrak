@@ -39,6 +39,12 @@ or if you watch issue in your JIRA_PROJECT_NAME
 batrak -Ln 100
 ```
 
+#### Show comments 
+
+```
+batrak -LCn TEST-100
+```
+
 #### Show available transitions for issue 
 
 ```
