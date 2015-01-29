@@ -1,0 +1,23 @@
+pkgname=batrak
+pkgver=1.0
+pkgrel=1
+_build_branch="master"
+pkgdesc="Console tool for managment JIRA issues"
+arch=("i686" "x86_64")
+licence=("GPLv2")
+depends=()
+install="batrak.install"
+
+source=("git+https://github.com/tears-of-noobs/batrak.git")
+sha256sums=('SKIP')
+build() {
+    cd $srcdir/$pkgname 
+    git checkout $_build_branch 
+    go build -o out/batrak
+}
+
+package() {
+    cd "${srcdir}/${pkgname}"
+
+    install -Dm 0755 "out/dbfarmd" "${pkgdir}/usr/bin/batrak"
+}
