@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -15,10 +16,33 @@ import (
 	"github.com/tears-of-noobs/gojira"
 )
 
+func statusOrder(iss gojira.Issue) int {
+	switch iss.Fields.Status.Name {
+	case "В разработке":
+		return 1
+	case "Открыта":
+		return 2
+	case "Завершена":
+		return 3
+	case "Отклонена":
+		return 3
+	default:
+		return 0
+	}
+}
+
+type sortByStatus []gojira.Issue
+
+func (v sortByStatus) Len() int      { return len(v) }
+func (v sortByStatus) Swap(i, j int) { v[i], v[j] = v[j], v[i] }
+func (v sortByStatus) Less(i, j int) bool {
+	return statusOrder(v[i]) < statusOrder(v[j])
+}
+
 func PrintIssues(user string) {
 	searchString := "project%20%3D%20" + projectName +
-		"%20AND%20assignee%20%3D%20" + user + "%20order%20by%20key%20DESC" +
-		"&fields=key,summary,status&maxResults=10"
+		"%20AND%20assignee%20%3D%20" + user + "%20order%20by%20updated%20DESC" +
+		"&fields=key,summary,status&maxResults=1000"
 	result, err := gojira.RawSearch(searchString)
 	if err != nil {
 		fmt.Println(err)
@@ -29,7 +53,11 @@ func PrintIssues(user string) {
 		fmt.Println(err)
 	}
 
-	for _, issue := range jiraIssues.Issues {
+	sort.Sort(sortByStatus(jiraIssues.Issues))
+	for n, issue := range jiraIssues.Issues {
+		if n > 20 {
+			break
+		}
 		var started string
 		if checkActive(issue.Key) {
 			started = "*"
