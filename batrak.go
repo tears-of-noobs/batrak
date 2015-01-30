@@ -39,6 +39,52 @@ func (v sortByStatus) Less(i, j int) bool {
 	return statusOrder(v[i]) < statusOrder(v[j])
 }
 
+func assignIssue(issueKey string) error {
+	issue, err := gojira.GetIssue(issueKey)
+	if err != nil {
+		return err
+	}
+	err = issue.Assignee(config.Username)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func commentIssue(issueKey string) error {
+	issue, err := gojira.GetIssue(issueKey)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println("Write your comment by one line")
+	reader := bufio.NewReader(os.Stdin)
+	text, _ := reader.ReadString('\n')
+	var b = []byte(fmt.Sprintf(`{ "body": "%s" }`, strings.Trim(text, "\n")))
+	_, err = issue.SetComment(bytes.NewBuffer(b))
+	if err != nil {
+		return err
+	}
+	return nil
+
+}
+
+func removeComment(issueKey, commentId string) error {
+	issue, err := gojira.GetIssue(issueKey)
+	if err != nil {
+		fmt.Println(err)
+	}
+	cId, err := strconv.ParseInt(commentId, 10, 64)
+	if err != nil {
+		return err
+	}
+	err = issue.DeleteComment(cId)
+	if err != nil {
+		return nil
+	}
+
+	return nil
+}
+
 func PrintIssues(user string) {
 	var result []byte
 	var err error
@@ -81,6 +127,7 @@ func PrintIssueByKey(jiraKey string) {
 		fmt.Println(err)
 	}
 	fmt.Printf("Issue: %s\n", issue.Key)
+	fmt.Printf("Assignee: %s\n", issue.Fields.Assignee.DisplayName)
 	fmt.Printf("Status: %s\n", issue.Fields.Status.Name)
 	fmt.Printf("Summary: %s\n\n", issue.Fields.Summary)
 	var desc string
@@ -243,6 +290,7 @@ func printComments(issueKey string) {
 	}
 	for _, comment := range comments.Comments {
 		fmt.Printf("\n################\n")
+		fmt.Printf("ID: %s\n", comment.Id)
 		fmt.Printf("Author: %s\n", comment.Author.DisplayName)
 		fmt.Printf("Update: %s\n", comment.Updated)
 		fmt.Printf("Comment: \n%s\n", comment.Body)

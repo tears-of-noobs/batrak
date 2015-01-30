@@ -25,6 +25,9 @@ func init() {
 		batrak (-M | --move) [-n NAME] <TRANSITION>
 		batrak (-S | --start) [-n NAME]
 		batrak (-T | --terminate) [-n NAME]
+		batrak (-A | --assign) [-n NAME]
+		batrak (-C ) [-n NAME]
+		batrak (-C ) [-R] [-n NAME] <COMMENTID>
 
 	Commands:
 		-L --list     List of last 10 issues assignee to logged username
@@ -119,6 +122,39 @@ func main() {
 				fmt.Println(err)
 			} else {
 				fmt.Println("Issue started")
+			}
+		}
+
+	}
+	if arguments["-A"].(bool) == true || arguments["--assign"].(bool) == true {
+		if arguments["-n"].(bool) == true {
+			err := assignIssue(jiraTag)
+			if err != nil {
+				fmt.Printf("ERROR: %s\n", err.Error())
+			} else {
+				fmt.Printf("Issue %s assignee to %s\n", jiraTag, config.Username)
+			}
+		}
+
+	}
+	if arguments["-C"].(bool) == true && arguments["-L"].(bool) == false {
+		if arguments["-n"].(bool) == true {
+			if arguments["-R"].(bool) == false {
+				err := commentIssue(jiraTag)
+				if err != nil {
+					fmt.Printf("ERROR: %s\n", err.Error())
+				} else {
+					fmt.Printf("Issue %s commented\n", jiraTag)
+				}
+			} else {
+				commentId := arguments["<COMMENTID>"].(string)
+				err := removeComment(jiraTag, commentId)
+				if err != nil {
+					fmt.Printf("ERROR: %s\n", err.Error())
+				} else {
+					fmt.Printf("Comment %s removed\n", commentId)
+				}
+
 			}
 		}
 
