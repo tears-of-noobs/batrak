@@ -172,11 +172,11 @@ func termProgress(issueKey string) error {
 		wlHours := strconv.FormatFloat(dur.Hours(), 'f', 0, 64)
 		wlMinutes := strconv.FormatFloat(dur.Minutes(), 'f', 0, 64)
 		wlTotal := fmt.Sprintf("%sh %sm", wlHours, wlMinutes)
-		err = os.Remove(tmpDir + issueKey)
 		err = workLog(issueKey, wlTotal)
 		if err != nil {
 			return err
 		}
+		err = os.Remove(tmpDir + issueKey)
 		err = handleHooks("post_stop", issueKey)
 		if err != nil {
 			return err
