@@ -45,7 +45,7 @@ func PrintIssues(user string) {
 	if config.Filter == 0 {
 		searchString := "project%20%3D%20" + config.ProjectName +
 			"%20AND%20assignee%20%3D%20" + user + "%20order%20by%20updated%20DESC" +
-			"&fields=key,summary,status&maxResults=1000"
+			"&fields=key,summary,status,assignee&maxResults=1000"
 		result, err = gojira.RawSearch(searchString)
 		if err != nil {
 			fmt.Println(err)
@@ -68,8 +68,9 @@ func PrintIssues(user string) {
 		if checkActive(issue.Key) {
 			started = "*"
 		}
-		fmt.Printf("%2s %10s %13s %s\n", started, issue.Key,
-			issue.Fields.Status.Name, issue.Fields.Summary)
+		fmt.Printf("%2s %10s %15s %13s %s\n", started, issue.Key,
+			issue.Fields.Status.Name, issue.Fields.Assignee.DisplayName,
+			issue.Fields.Summary)
 	}
 
 }
