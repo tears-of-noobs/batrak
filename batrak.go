@@ -37,12 +37,21 @@ func (v sortByStatus) Less(i, j int) bool {
 }
 
 func PrintIssues(user string) {
-	searchString := "project%20%3D%20" + config.ProjectName +
-		"%20AND%20assignee%20%3D%20" + user + "%20order%20by%20updated%20DESC" +
-		"&fields=key,summary,status&maxResults=1000"
-	result, err := gojira.RawSearch(searchString)
-	if err != nil {
-		fmt.Println(err)
+	var result []byte
+	var err error
+	if &config.Filter == nil {
+		searchString := "project%20%3D%20" + config.ProjectName +
+			"%20AND%20assignee%20%3D%20" + user + "%20order%20by%20updated%20DESC" +
+			"&fields=key,summary,status&maxResults=1000"
+		result, err = gojira.RawSearch(searchString)
+		if err != nil {
+			fmt.Println(err)
+		}
+	} else {
+		result, err = gojira.FilterSearch(config.Filter)
+		if err != nil {
+			fmt.Println(err)
+		}
 	}
 	var jiraIssues gojira.JiraSearchIssues
 	err = json.Unmarshal(result, &jiraIssues)
@@ -51,10 +60,7 @@ func PrintIssues(user string) {
 	}
 
 	sort.Sort(sortByStatus(jiraIssues.Issues))
-	for n, issue := range jiraIssues.Issues {
-		if n > 20 {
-			break
-		}
+	for _, issue := range jiraIssues.Issues {
 		var started string
 		if checkActive(issue.Key) {
 			started = "*"
