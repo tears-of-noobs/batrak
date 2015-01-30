@@ -62,7 +62,7 @@ func (c *Configuration) testConfig() error {
 	return nil
 }
 
-func (c *Configuration) ExportToHook() string {
+func (c *Configuration) exportToHook() string {
 	return fmt.Sprintf("%s*%s*%s",
 		c.Username,
 		c.Password,

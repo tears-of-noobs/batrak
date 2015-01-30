@@ -18,6 +18,9 @@ import (
 )
 
 func statusOrder(iss gojira.Issue) int {
+	if len(config.Workflow.Stage) == 0 {
+		return 1
+	}
 	for _, stage := range config.Workflow.Stage {
 		if stage.Name == iss.Fields.Status.Name {
 			return stage.Order
@@ -39,7 +42,7 @@ func (v sortByStatus) Less(i, j int) bool {
 func PrintIssues(user string) {
 	var result []byte
 	var err error
-	if &config.Filter == nil {
+	if config.Filter == 0 {
 		searchString := "project%20%3D%20" + config.ProjectName +
 			"%20AND%20assignee%20%3D%20" + user + "%20order%20by%20updated%20DESC" +
 			"&fields=key,summary,status&maxResults=1000"
@@ -246,7 +249,7 @@ func printComments(issueKey string) {
 func handleHooks(stageName, jiraKey string) error {
 	execHooks := func(hookName string) error {
 		fmt.Printf("Execute hook %s\n", hookName)
-		err := exec.Command(hookName, jiraKey, config.ExportToHook()).Run()
+		err := exec.Command(hookName, jiraKey, config.exportToHook()).Run()
 		if err != nil {
 			return errors.New(fmt.Sprintf("Hook %s failed\n", hookName))
 		}
