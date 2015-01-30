@@ -19,7 +19,7 @@ func init() {
 	usage := `Batrak. 
 	
 	Usage:
-		batrak (-L | --list) [-n NAME]
+		batrak (-L | --list) [-n NAME] [--count=<cnt>]
 		batrak (-L | --list) [-C] [-n NAME]
 		batrak (-M | --move) [-n NAME]
 		batrak (-M | --move) [-n NAME] <TRANSITION>
@@ -32,9 +32,12 @@ func init() {
 	Commands:
 		-L --list     List of last 10 issues assignee to logged username
 		-M --move  List of available transitions for issue
-		-S --start  Start progress on issue`
+		-S --start  Start progress on issue
+	Options:
+		--count=<cnt>  Count of prined issues [default: 10].`
 
 	arguments, _ = docopt.Parse(usage, nil, true, "Batrak 1.0", false)
+
 }
 
 func main() {
@@ -86,7 +89,8 @@ func main() {
 				PrintIssueByKey(jiraTag)
 			}
 		} else {
-			PrintIssues(user.Name)
+			cnt := arguments["--count"].(string)
+			PrintIssues(user.Name, cnt)
 		}
 	}
 

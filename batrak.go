@@ -85,13 +85,13 @@ func removeComment(issueKey, commentId string) error {
 	return nil
 }
 
-func PrintIssues(user string) {
+func PrintIssues(user, cnt string) {
 	var result []byte
 	var err error
 	if config.Filter == 0 {
 		searchString := "project%20%3D%20" + config.ProjectName +
 			"%20AND%20assignee%20%3D%20" + user + "%20order%20by%20updated%20DESC" +
-			"&fields=key,summary,status,assignee&maxResults=10"
+			"&fields=key,summary,status,assignee&maxResults=" + cnt
 		result, err = gojira.RawSearch(searchString)
 		if err != nil {
 			fmt.Println(err)
@@ -216,9 +216,17 @@ func termProgress(issueKey string) error {
 			return err
 		}
 		dur := time.Now().Sub(fi.ModTime())
-		wlHours := strconv.FormatFloat(dur.Hours(), 'f', 0, 64)
-		wlMinutes := strconv.FormatFloat(dur.Minutes(), 'f', 0, 64)
-		wlTotal := fmt.Sprintf("%sh %sm", wlHours, wlMinutes)
+		rawMinutes := int(dur.Minutes())
+		var wlHours int
+		var wlMinutes int
+		residue := rawMinutes % 60
+		if residue == rawMinutes {
+			wlHours = 0
+		} else {
+			wlMinutes = residue
+			wlHours = rawMinutes / 60
+		}
+		wlTotal := fmt.Sprintf("%dh %dm", wlHours, wlMinutes)
 		err = workLog(issueKey, wlTotal)
 		if err != nil {
 			return err
