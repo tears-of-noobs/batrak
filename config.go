@@ -14,6 +14,7 @@ type Configuration struct {
 	ProjectName string   `toml:"project_name"`
 	Workflow    Workflow `toml: "workflow"`
 	Hooks       Hooks    `toml:"hooks"`
+	Filter      int      `toml:"filter_id"`
 }
 
 type Hooks struct {
