@@ -39,8 +39,8 @@ Just add following lines in you config with status and order description
 ```
 Batrak support hooks (pre_start, post_start, pre_stop, post_stop)
 Hook - it just binary file or script that takes two string arguments:
-Jira issue Key - "TEST-100"
-Credential for connecting to JIRA API - "JIRA_USERNAME*JIRA_PASSWORD*JIRA_API_URL"
+* Jira issue Key - "TEST-100"
+* Credential for connecting to JIRA API - "JIRA_USERNAME\*JIRA_PASSWORD\*JIRA_API_URL"
 
 If you write you own hook, who does something with your issue, and you want use it after issue was stopped, 
 add this lines in your config
