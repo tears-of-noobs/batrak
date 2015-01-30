@@ -47,6 +47,14 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+	if _, err := os.Stat(tmpDir); os.IsNotExist(err) {
+		err = os.Mkdir(tmpDir, 0777)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+	}
 	gojira.Username = config.Username
 	gojira.Password = config.Password
 	gojira.BaseUrl = config.JiraApiUrl
