@@ -173,7 +173,7 @@ func termProgress(issueKey string) error {
 		wlMinutes := strconv.FormatFloat(dur.Minutes(), 'f', 0, 64)
 		wlTotal := fmt.Sprintf("%sh %sm", wlHours, wlMinutes)
 		err = os.Remove(tmpDir + issueKey)
-		workLog(issueKey, wlTotal)
+		err = workLog(issueKey, wlTotal)
 		if err != nil {
 			return err
 		}
@@ -194,7 +194,7 @@ func workLog(issueKey, worklogTime string) error {
 		fmt.Println(err)
 	}
 	fmt.Printf("You have worked %s\n", worklogTime)
-	fmt.Println("Would you like log your work time?")
+	fmt.Println("Would you like log your work time? (Y)es)/(A)bort/(N)o")
 	reader := bufio.NewReader(os.Stdin)
 	text, _ := reader.ReadString('\n')
 	if strings.Trim(strings.ToUpper(text), "\n") == "Y" {
@@ -206,6 +206,9 @@ func workLog(issueKey, worklogTime string) error {
 			return err
 		}
 		return nil
+	}
+	if strings.Trim(strings.ToUpper(text), "\n") == "A" {
+		return errors.New("Aborting")
 	} else {
 		fmt.Println("Stop without logging")
 		return nil
