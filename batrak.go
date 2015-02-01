@@ -85,7 +85,7 @@ func removeComment(issueKey, commentId string) error {
 	return nil
 }
 
-func PrintIssues(user, cnt string) {
+func printIssues(user, cnt string) {
 	var result []byte
 	var err error
 	if config.Filter == 0 {
@@ -121,7 +121,7 @@ func PrintIssues(user, cnt string) {
 
 }
 
-func PrintIssueByKey(jiraKey string) {
+func printIssueByKey(jiraKey string) {
 	issue, err := gojira.GetIssue(jiraKey)
 	if err != nil {
 		fmt.Println(err)
@@ -140,7 +140,7 @@ func PrintIssueByKey(jiraKey string) {
 
 }
 
-func PrintTransitionsOfIssue(jiraKey string) {
+func printTransitionsOfIssue(jiraKey string) {
 	issue, err := gojira.GetIssue(jiraKey)
 	if err != nil {
 		fmt.Println(err)

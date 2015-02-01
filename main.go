@@ -86,11 +86,11 @@ func main() {
 			if arguments["-C"].(bool) == true {
 				printComments(jiraTag)
 			} else {
-				PrintIssueByKey(jiraTag)
+				printIssueByKey(jiraTag)
 			}
 		} else {
 			cnt := arguments["--count"].(string)
-			PrintIssues(user.Name, cnt)
+			printIssues(user.Name, cnt)
 		}
 	}
 
@@ -106,7 +106,7 @@ func main() {
 				}
 
 			} else {
-				PrintTransitionsOfIssue(jiraTag)
+				printTransitionsOfIssue(jiraTag)
 			}
 		}
 	}

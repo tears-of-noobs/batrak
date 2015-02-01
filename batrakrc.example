@@ -8,30 +8,31 @@ project_name = "TEST"
     [[workflow.stage]]
         name = "В разработке"
         order = 1
+        kanban_order = 3
     [[workflow.stage]]
         name = "На анализе"
         order = 2
+        kanban_order = 2
     [[workflow.stage]]
         name = "На ревью"
         order = 2
+        kanban_order = 4
     [[workflow.stage]]
         name = "Интеграция"
         order = 3
+        kanban_order = 5
     [[workflow.stage]]
         name = "Открыта"
         order = 3
+        kanban_order = 1
     [[workflow.stage]]
         name = "Завершена"
         order = 4
+        kanban_order = 6
     [[workflow.stage]]
         name = "Отклонена"
         order = 4
-    [[workflow.stage]]
-        name = "Fixed"
-        order = 5
-    [[workflow.stage]]
-        name = "Awaiting thorough fix"
-        order = 5
+        kanban_order = 7
 
 [hooks]
 
