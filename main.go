@@ -21,6 +21,7 @@ func init() {
 	Usage:
 		batrak (-L | --list) [-n NAME] [--count=<cnt>]
 		batrak (-L | --list) [-C] [-n NAME]
+		batrak (-L | --list) [-K] [--count=<cnt>]
 		batrak (-M | --move) [-n NAME]
 		batrak (-M | --move) [-n NAME] <TRANSITION>
 		batrak (-S | --start) [-n NAME]
@@ -90,7 +91,11 @@ func main() {
 			}
 		} else {
 			cnt := arguments["--count"].(string)
-			printIssues(user.Name, cnt)
+			if arguments["-K"].(bool) == true {
+				printKanban(user.Name, cnt)
+			} else {
+				printIssues(user.Name, cnt)
+			}
 		}
 	}
 

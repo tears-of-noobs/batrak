@@ -12,7 +12,7 @@ type Configuration struct {
 	Password    string   `toml:"password"`
 	JiraApiUrl  string   `toml:"jira_api_url"`
 	ProjectName string   `toml:"project_name"`
-	Workflow    Workflow `toml: "workflow"`
+	Workflow    Workflow `toml:"workflow"`
 	Hooks       Hooks    `toml:"hooks"`
 	Filter      int      `toml:"filter_id"`
 }
@@ -29,8 +29,9 @@ type Workflow struct {
 	Stage       []Stage  `toml:"stage"`
 }
 type Stage struct {
-	Name  string `toml: "name"`
-	Order int    `toml: "order"`
+	Name        string `toml:"name"`
+	Order       int    `toml:"order"`
+	KanbanOrder int    `toml:"kanban_order"`
 }
 
 func ReadConfig(filePath string) (*Configuration, error) {

@@ -85,7 +85,67 @@ func removeComment(issueKey, commentId string) error {
 	return nil
 }
 
-func printIssues(user, cnt string) {
+type sortByKanbanStage []Stage
+
+func (v sortByKanbanStage) Len() int      { return len(v) }
+func (v sortByKanbanStage) Swap(i, j int) { v[i], v[j] = v[j], v[i] }
+func (v sortByKanbanStage) Less(i, j int) bool {
+	return v[i].KanbanOrder < v[j].KanbanOrder
+}
+
+func printKanban(user, cnt string) {
+	jiraIssues, err := searchIssues(user, cnt)
+	if err != nil {
+		fmt.Println(err)
+	}
+	stages := config.Workflow.Stage
+	sort.Sort(sortByKanbanStage(stages))
+	for _, stage := range stages {
+		fmt.Printf("| %-15s ", stage.Name)
+	}
+	fmt.Printf("\n")
+	for i := 0; i <= 17*len(stages); i++ {
+		fmt.Printf("-")
+	}
+	fmt.Printf("\n")
+
+	for _, issue := range jiraIssues.Issues {
+		kanbanStage := getKanbanStage(issue.Fields.Status.Name)
+		if kanbanStage == 0 {
+			continue
+		}
+		printOnKanban(kanbanStage, issue.Key, stages)
+		fmt.Printf("\n")
+	}
+
+}
+
+func getKanbanStage(status string) int {
+	for _, st := range config.Workflow.Stage {
+		if status == st.Name {
+			return st.KanbanOrder
+		}
+	}
+
+	return 0
+}
+
+func printOnKanban(place int, issueKey string, stages []Stage) {
+	for _, st := range stages {
+		if place == st.KanbanOrder {
+			if checkActive(issueKey) {
+				fmt.Printf("|*%-15s ", issueKey)
+			} else {
+				fmt.Printf("| %-15s ", issueKey)
+			}
+		} else {
+			fmt.Printf("| %-15s ", " ")
+		}
+
+	}
+}
+
+func searchIssues(user, cnt string) (*gojira.JiraSearchIssues, error) {
 	var result []byte
 	var err error
 	if config.Filter == 0 {
@@ -94,16 +154,25 @@ func printIssues(user, cnt string) {
 			"&fields=key,summary,status,assignee&maxResults=" + cnt
 		result, err = gojira.RawSearch(searchString)
 		if err != nil {
-			fmt.Println(err)
+			return nil, err
 		}
 	} else {
 		result, err = gojira.FilterSearch(config.Filter)
 		if err != nil {
-			fmt.Println(err)
+			return nil, err
 		}
 	}
 	var jiraIssues gojira.JiraSearchIssues
 	err = json.Unmarshal(result, &jiraIssues)
+	if err != nil {
+		return nil, err
+	}
+
+	return &jiraIssues, nil
+}
+
+func printIssues(user, cnt string) {
+	jiraIssues, err := searchIssues(user, cnt)
 	if err != nil {
 		fmt.Println(err)
 	}
