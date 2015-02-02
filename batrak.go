@@ -18,6 +18,8 @@ import (
 	"github.com/tears-of-noobs/gojira"
 )
 
+var editor = os.Getenv("EDITOR")
+
 func statusOrder(iss gojira.Issue) int {
 	if len(config.Workflow.Stage) == 0 {
 		return 1
@@ -345,13 +347,38 @@ func workLog(issueKey, worklogTime string) error {
 	}
 	fmt.Printf("You have worked %s\n", worklogTime)
 	fmt.Println("Would you like log your work time? (Y)es)/(A)bort/(N)o")
+
 	reader := bufio.NewReader(os.Stdin)
 	text, _ := reader.ReadString('\n')
+
 	if strings.Trim(strings.ToUpper(text), "\n") == "Y" {
-		fmt.Println("Enter description by one line")
-		logReader := bufio.NewReader(os.Stdin)
-		log, _ := logReader.ReadString('\n')
-		err = issue.SetWorklog(worklogTime, log)
+		tmpFilename := "/tmp/" + issueKey + "-worklog-message.tmp"
+
+		logFile, err := os.Create(tmpFilename)
+		if err != nil {
+			return err
+		}
+
+		cmd := exec.Command(editor, tmpFilename)
+		cmd.Stdin = os.Stdin
+		cmd.Stdout = os.Stdout
+
+		err = cmd.Run()
+		if err != nil {
+			return err
+		}
+
+		log, err := ioutil.ReadAll(logFile)
+		if err != nil {
+			return err
+		}
+
+		err = os.Remove(tmpFilename)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		err = issue.SetWorklog(worklogTime, string(log))
 		if err != nil {
 			return err
 		}
