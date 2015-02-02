@@ -99,6 +99,10 @@ func printKanban(user, cnt string) {
 		fmt.Println(err)
 	}
 	stages := config.Workflow.Stage
+	if len(stages) == 0 {
+		fmt.Println("No kanban stages defined in config file")
+		return
+	}
 	sort.Sort(sortByKanbanStage(stages))
 	for _, stage := range stages {
 		fmt.Printf("| %-15s ", stage.Name)
@@ -291,6 +295,7 @@ func termProgress(issueKey string) error {
 		residue := rawMinutes % 60
 		if residue == rawMinutes {
 			wlHours = 0
+			wlMinutes = rawMinutes
 		} else {
 			wlMinutes = residue
 			wlHours = rawMinutes / 60
