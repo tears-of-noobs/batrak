@@ -1,7 +1,7 @@
 # batrak
 Jira issues worklog console helper
 
-![image](https://cloud.githubusercontent.com/assets/4948221/5998731/a4f3a438-aac2-11e4-95df-4363fbe1d1fd.gif)
+![image](https://cloud.githubusercontent.com/assets/4948221/6000483/4a522496-aad6-11e4-84b2-5715c02af86d.gif)
 
 # Usage
 
