@@ -31,9 +31,11 @@ Just add following lines in you config with status and order description
   [[workflow.stage]]
     name = "In progress"
     order = 1
+    kanban_order = 2
   [[workflow.stage]]
     name = "Analysis"
     order = 2
+    kanban_order = 1
     .
     .
     .
@@ -55,15 +57,17 @@ post_stop = ["hook_name"]
 
 ### Commands
 
-#### List 10 last issues assigne to JIRA_USERNAME
-
+##### List 10 last issues assigne to JIRA_USERNAME
 ```
 batrak -L
 ```
 
-#### Show issue (Name, Status, Description)
+##### List 2 last issues assigne to JIRA_USERNAME
+```
+batrak -L --count=2
+```
 
-
+##### Show issue (Name, Status, Description)
 ```
 batrak -Ln TEST-100
 ```
@@ -74,33 +78,47 @@ or if you watch issue in your JIRA_PROJECT_NAME
 batrak -Ln 100
 ```
 
-#### Show comments 
+##### Show kanban (works if you describe your workflow in config file)
+```
+batrak -LK
+```
 
+##### Assign issue
+```
+batrak -An TEST-100
+```
+
+##### Show comments 
 ```
 batrak -LCn TEST-100
 ```
 
-#### Show available transitions for issue 
+##### Write comment
+```
+batrak -Cn TEST-100
+```
 
+##### Remove comment
+```
+batrak -RCn TEST-100 COMMENT_ID
+```
+
+##### Show available transitions for issue 
 ```
 batrak -Mn TEST-100
 ```
 
-#### Move issue 
-
+##### Move issue 
 ```
 batrak -Mn TEST-100 TRANSITION_ID
 ``` 
 
-#### Start issue 
-
+##### Start issue 
 ```
 batrak -Sn TEST-100
 ``` 
 
-
-#### Stop issue with logging work
-
+##### Stop issue with logging work
 ```
 batrak -Tn TEST-100
 ``` 
