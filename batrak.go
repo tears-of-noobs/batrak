@@ -370,6 +370,10 @@ func printComments(issueKey string) {
 		fmt.Println(err)
 		return
 	}
+	if len(comments.Comments) == 0 {
+		fmt.Println("Issue has not commented")
+		return
+	}
 	for _, comment := range comments.Comments {
 		fmt.Printf("\n################\n")
 		fmt.Printf("ID: %s\n", comment.Id)
