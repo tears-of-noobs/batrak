@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/olekukonko/tablewriter"
 	"github.com/tears-of-noobs/gojira"
 )
 
@@ -85,6 +86,72 @@ func removeComment(issueKey, commentId string) error {
 	return nil
 }
 
+type kanbanWriter struct {
+	data   [][]string
+	header []string
+}
+
+func NewKanbanWriter(issues []gojira.Issue) kanbanWriter {
+	k := kanbanWriter{}
+	stages := config.Workflow.Stage
+	if len(stages) == 0 {
+		fmt.Println("No kanban stages defined in config file")
+		return k
+	}
+	sort.Sort(sortByKanbanStage(stages))
+
+	k.header = make([]string, len(stages))
+	for i, st := range stages {
+		k.header[i] = st.Name
+	}
+
+	b := map[string][]gojira.Issue{}
+
+	for _, iss := range issues {
+		st := iss.Fields.Status.Name
+		if _, ok := b[st]; !ok {
+			b[st] = []gojira.Issue{}
+		}
+		b[st] = append(b[st], iss)
+	}
+
+	k.data = [][]string{}
+	more := true
+	for i := 0; more; i++ {
+		more = false
+		k.data = append(k.data, make([]string, len(k.header)))
+		for j, st := range k.header {
+			if len(b[st]) == 0 {
+				k.data[i][j] = ""
+				continue
+			}
+
+			if len(b[st]) > 1 {
+				more = true
+			}
+
+			k.data[i][j] = b[st][0].Key
+			if checkActive(k.data[i][j]) {
+				k.data[i][j] = "*" + k.data[i][j]
+			}
+			b[st] = b[st][1:]
+		}
+	}
+
+	return k
+}
+
+func (k kanbanWriter) printBoard() {
+	table := tablewriter.NewWriter(os.Stdout)
+
+	table.SetHeader(k.header)
+	for _, v := range k.data {
+		table.Append(v)
+	}
+
+	table.Render()
+}
+
 type sortByKanbanStage []Stage
 
 func (v sortByKanbanStage) Len() int      { return len(v) }
@@ -98,55 +165,9 @@ func printKanban(user, cnt string) {
 	if err != nil {
 		fmt.Println(err)
 	}
-	stages := config.Workflow.Stage
-	if len(stages) == 0 {
-		fmt.Println("No kanban stages defined in config file")
-		return
-	}
-	sort.Sort(sortByKanbanStage(stages))
-	for _, stage := range stages {
-		fmt.Printf("| %-15s ", stage.Name)
-	}
-	fmt.Printf("\n")
-	for i := 0; i <= 17*len(stages); i++ {
-		fmt.Printf("-")
-	}
-	fmt.Printf("\n")
 
-	for _, issue := range jiraIssues.Issues {
-		kanbanStage := getKanbanStage(issue.Fields.Status.Name)
-		if kanbanStage == 0 {
-			continue
-		}
-		printOnKanban(kanbanStage, issue.Key, stages)
-		fmt.Printf("\n")
-	}
-
-}
-
-func getKanbanStage(status string) int {
-	for _, st := range config.Workflow.Stage {
-		if status == st.Name {
-			return st.KanbanOrder
-		}
-	}
-
-	return 0
-}
-
-func printOnKanban(place int, issueKey string, stages []Stage) {
-	for _, st := range stages {
-		if place == st.KanbanOrder {
-			if checkActive(issueKey) {
-				fmt.Printf("|*%-15s ", issueKey)
-			} else {
-				fmt.Printf("| %-15s ", issueKey)
-			}
-		} else {
-			fmt.Printf("| %-15s ", " ")
-		}
-
-	}
+	kw := NewKanbanWriter(jiraIssues.Issues)
+	kw.printBoard()
 }
 
 func searchIssues(user, cnt string) (*gojira.JiraSearchIssues, error) {
