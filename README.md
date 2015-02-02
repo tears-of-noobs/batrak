@@ -1,5 +1,5 @@
 # batrak
-Jira issues worklog console helper
+Console tool for managment Jira issues
 
 ![image](https://cloud.githubusercontent.com/assets/4948221/6000483/4a522496-aad6-11e4-84b2-5715c02af86d.gif)
 
