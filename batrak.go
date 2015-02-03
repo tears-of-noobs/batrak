@@ -59,10 +59,13 @@ func commentIssue(issueKey string) error {
 	if err != nil {
 		fmt.Println(err)
 	}
-	fmt.Println("Write your comment by one line")
-	reader := bufio.NewReader(os.Stdin)
-	text, _ := reader.ReadString('\n')
-	var b = []byte(fmt.Sprintf(`{ "body": "%s" }`, strings.Trim(text, "\n")))
+
+	text, err := processEditorInput(issueKey + "-issue-comment.tmp")
+	if err != nil {
+		return err
+	}
+
+	var b = []byte(fmt.Sprintf(`{ "body": "%s" }`, strings.Replace(text, "\n", " ", -1)))
 	_, err = issue.SetComment(bytes.NewBuffer(b))
 	if err != nil {
 		return err
@@ -352,30 +355,9 @@ func workLog(issueKey, worklogTime string) error {
 	text, _ := reader.ReadString('\n')
 
 	if strings.Trim(strings.ToUpper(text), "\n") == "Y" {
-		tmpFilename := "/tmp/" + issueKey + "-worklog-message.tmp"
-
-		logFile, err := os.Create(tmpFilename)
+		log, err := processEditorInput(issueKey + "-worklog-message.tmp")
 		if err != nil {
 			return err
-		}
-
-		cmd := exec.Command(editor, tmpFilename)
-		cmd.Stdin = os.Stdin
-		cmd.Stdout = os.Stdout
-
-		err = cmd.Run()
-		if err != nil {
-			return err
-		}
-
-		log, err := ioutil.ReadAll(logFile)
-		if err != nil {
-			return err
-		}
-
-		err = os.Remove(tmpFilename)
-		if err != nil {
-			fmt.Println(err)
 		}
 
 		err = issue.SetWorklog(worklogTime, string(log))
@@ -391,6 +373,36 @@ func workLog(issueKey, worklogTime string) error {
 		return nil
 	}
 
+}
+
+func processEditorInput(inputId string) (string, error) {
+	tmpFilename := "/tmp/" + inputId
+
+	logFile, err := os.Create(tmpFilename)
+	if err != nil {
+		return "", err
+	}
+
+	cmd := exec.Command(editor, tmpFilename)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+
+	err = cmd.Run()
+	if err != nil {
+		return "", err
+	}
+
+	log, err := ioutil.ReadAll(logFile)
+	if err != nil {
+		return "", err
+	}
+
+	err = os.Remove(tmpFilename)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	return string(log), nil
 }
 
 func moveIssue(issueKey, transitionId string) error {
