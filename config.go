@@ -64,7 +64,7 @@ func (c *Configuration) testConfig() error {
 }
 
 func (c *Configuration) exportToHook() string {
-	return fmt.Sprintf("%s*%s*%s",
+	return fmt.Sprintf("%s\x8E%s\x8E%s",
 		c.Username,
 		c.Password,
 		c.JiraApiUrl)
