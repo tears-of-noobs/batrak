@@ -15,7 +15,8 @@ import (
 	"time"
 
 	"github.com/olekukonko/tablewriter"
-	"github.com/tears-of-noobs/gojira"
+	//	"github.com/tears-of-noobs/gojira"
+	"gojira"
 )
 
 var editor = os.Getenv("EDITOR")
@@ -216,6 +217,17 @@ func printIssues(user, cnt string) {
 		fmt.Printf("%2s %10s %15s %13s %s\n", started, issue.Key,
 			issue.Fields.Status.Name, issue.Fields.Assignee.DisplayName,
 			issue.Fields.Summary)
+	}
+
+}
+
+func printAllProjects() {
+	projects, err := gojira.GetProjects()
+	if err != nil {
+		fmt.Println(err)
+	}
+	for _, prj := range projects {
+		fmt.Printf("%s %-15s %s\n", prj.Id, prj.Key, prj.Name)
 	}
 
 }

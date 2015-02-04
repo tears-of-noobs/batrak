@@ -6,7 +6,8 @@ import (
 	"os/user"
 	"strings"
 
-	"github.com/tears-of-noobs/gojira"
+	//	"github.com/tears-of-noobs/gojira"
+	"gojira"
 
 	"github.com/docopt/docopt.go"
 )
@@ -21,6 +22,7 @@ func init() {
 	Usage:
 		batrak (-L | --list) [-n NAME] [--count=<cnt>]
 		batrak (-L | --list) [-C] [-n NAME]
+		batrak (-L | --list) [-P] [-n NAME]
 		batrak (-L | --list) [-K] [--count=<cnt>]
 		batrak (-M | --move) [-n NAME]
 		batrak (-M | --move) [-n NAME] <TRANSITION>
@@ -93,8 +95,13 @@ func main() {
 			cnt := arguments["--count"].(string)
 			if arguments["-K"].(bool) == true {
 				printKanban(user.Name, cnt)
-			} else {
+			}
+			if arguments["-K"].(bool) == false && arguments["-P"].(bool) == false {
 				printIssues(user.Name, cnt)
+			}
+
+			if arguments["-P"].(bool) == true {
+				printAllProjects()
 			}
 		}
 	}
