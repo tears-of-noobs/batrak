@@ -6,8 +6,8 @@ import (
 	"os/user"
 	"strings"
 
-	//	"github.com/tears-of-noobs/gojira"
-	"gojira"
+	"github.com/tears-of-noobs/gojira"
+	//	"gojira"
 
 	"github.com/docopt/docopt.go"
 )

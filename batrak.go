@@ -15,8 +15,8 @@ import (
 	"time"
 
 	"github.com/olekukonko/tablewriter"
-	//	"github.com/tears-of-noobs/gojira"
-	"gojira"
+	"github.com/tears-of-noobs/gojira"
+	//	"gojira"
 )
 
 var editor = os.Getenv("EDITOR")
