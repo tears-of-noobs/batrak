@@ -8,64 +8,60 @@ import (
 )
 
 type Configuration struct {
-	Username    string   `toml:"username"`
-	Password    string   `toml:"password"`
-	JiraApiUrl  string   `toml:"jira_api_url"`
-	ProjectName string   `toml:"project_name"`
-	Workflow    Workflow `toml:"workflow"`
-	Hooks       Hooks    `toml:"hooks"`
-	Filter      int      `toml:"filter_id"`
-}
-
-type Hooks struct {
-	PreStart  []string `toml:"pre_start"`
-	PostStart []string `toml:"post_start"`
-	PreStop   []string `toml:"pre_stop"`
-	PostStop  []string `toml:"post_stop"`
+	Username    string              `toml:"username"`
+	Password    string              `toml:"password"`
+	JiraApiUrl  string              `toml:"jira_api_url"`
+	ProjectName string              `toml:"project_name"`
+	Workflow    Workflow            `toml:"workflow"`
+	Hooks       map[string][]string `toml:"hooks"`
+	Filter      int                 `toml:"filter_id"`
 }
 
 type Workflow struct {
 	AgileFields []string `toml:"agile_fields"`
-	Stage       []Stage  `toml:"stage"`
+	Stages      []Stage  `toml:"stage"`
 }
+
 type Stage struct {
 	Name        string `toml:"name"`
 	Order       int    `toml:"order"`
 	KanbanOrder int    `toml:"kanban_order"`
 }
 
-func ReadConfig(filePath string) (*Configuration, error) {
+func getConfig(filePath string) (*Configuration, error) {
 	var config Configuration
+
 	_, err := toml.DecodeFile(filePath, &config)
 	if err != nil {
 		return nil, err
 	}
-	err = config.testConfig()
+
+	err = config.Validate()
 	if err != nil {
 		return nil, err
 	}
+
 	return &config, nil
 }
 
-func (c *Configuration) testConfig() error {
-	if c.Username == "" {
+func (config *Configuration) Validate() error {
+	switch {
+	case config.Username == "":
 		return errors.New("Username is empty")
-	}
-	if c.Password == "" {
+	case config.Password == "":
 		return errors.New("Password is empty")
-	}
-	if c.JiraApiUrl == "" {
+	case config.JiraApiUrl == "":
 		return errors.New("URL to Jira API is empty")
-	}
-	if c.ProjectName == "" {
+	case config.ProjectName == "":
 		return errors.New(" Project name is empty")
 	}
+
 	return nil
 }
 
-func (c *Configuration) exportToHook() string {
-	return fmt.Sprintf("%s\x8E%s\x8E%s",
-		c.Username,
-		c.Password,
-		c.JiraApiUrl)
+func (config *Configuration) getUserCredentials() string {
+	return fmt.Sprintf(
+		"%s\x8E%s\x8E%s",
+		config.Username, config.Password, config.JiraApiUrl,
+	)
 }

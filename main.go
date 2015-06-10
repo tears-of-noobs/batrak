@@ -1,179 +1,345 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"os"
-	"os/user"
+	"path/filepath"
+	"sort"
+	"strconv"
 	"strings"
 
+	"github.com/docopt/docopt-go"
 	"github.com/tears-of-noobs/gojira"
-	//	"gojira"
-
-	"github.com/docopt/docopt.go"
 )
 
-var config *Configuration
-var tmpDir = "/tmp/batrak/"
-var arguments map[string]interface{}
+func getArgs() (map[string]interface{}, error) {
+	usage := `Batrak 2.0
 
-func init() {
-	usage := `Batrak. 
-	
 	Usage:
-		batrak (-L | --list) [-n NAME] [--count=<cnt>]
-		batrak (-L | --list) [-C] [-n NAME]
-		batrak (-L | --list) [-P] [-n NAME]
-		batrak (-L | --list) [-K] [--count=<cnt>]
-		batrak (-M | --move) [-n NAME]
-		batrak (-M | --move) [-n NAME] <TRANSITION>
-		batrak (-S | --start) [-n NAME]
-		batrak (-T | --terminate) [-n NAME]
-		batrak (-A | --assign) [-n NAME]
-		batrak (-C ) [-n NAME]
-		batrak (-C ) [-R] [-n NAME] <COMMENTID>
+		batrak -L [-n <issue>] [-c <count>]
+		batrak -L -K [-c <count>]
+		batrak -P
+		batrak -M -n <issue> [<transition>]
+		batrak -S -n <issue>
+		batrak -T -n <issue>
+		batrak -A -n <issue>
+		batrak -C -n <issue>
+		batrak -C -L -n <issue>
+		batrak -C -L -n <issue> [-R] [<comment>]
 
 	Commands:
-		-L --list     List of last 10 issues assignee to logged username
-		-M --move  List of available transitions for issue
-		-S --start  Start progress on issue
+		-L   List mode.
+		-M   Move mode.
+		-S   Start progress mode.
+		-A   Assign issue mode.
+		-C   Comments mode.
+		-P   Projects mode.
+
 	Options:
-		--count=<cnt>  Count of prined issues [default: 10].`
+		-c <count>     Count of displayed issues [default: 10].
+		-n <issue>     JIRA issue identifier.
+	`
 
-	arguments, _ = docopt.Parse(usage, nil, true, "Batrak 1.0", false)
-
+	return docopt.Parse(usage, nil, true, "Batrak 2.0", false)
 }
 
 func main() {
-	//fmt.Printf("%s\n", arguments)
-	usr, err := user.Current()
+	args, err := getArgs()
 	if err != nil {
-		fmt.Println(err)
+		fmt.Fprintln(os.Stderr, err.Error())
 		os.Exit(1)
 	}
-	configPath := fmt.Sprintf("%s/.batrakrc", usr.HomeDir)
-	config, err = ReadConfig(configPath)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-	if _, err := os.Stat(tmpDir); os.IsNotExist(err) {
-		err = os.Mkdir(tmpDir, 0777)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
 
+	config, err := getConfig(filepath.Join(os.Getenv("HOME"), ".batrakrc"))
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err.Error())
+		os.Exit(1)
 	}
+
 	gojira.Username = config.Username
 	gojira.Password = config.Password
 	gojira.BaseUrl = config.JiraApiUrl
 
-	user, err := gojira.Myself()
+	hooks := NewHooks(config)
+
+	var issueKey string
+	var issue *gojira.Issue
+	if args["-n"] != nil {
+		issueKey = args["-n"].(string)
+
+		issueKeyPieces := strings.Split(issueKey, "-")
+		if len(issueKeyPieces) < 2 {
+			if !strings.Contains(issueKey, config.ProjectName) {
+				issueKey = fmt.Sprintf("%s-%s", config.ProjectName, issueKey)
+			}
+		}
+
+		issue, err = gojira.GetIssue(issueKey)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err.Error())
+			os.Exit(1)
+		}
+	}
+
+	var (
+		listMode      = args["-L"].(bool)
+		moveMode      = args["-M"].(bool)
+		startMode     = args["-S"].(bool)
+		terminateMode = args["-T"].(bool)
+		assignMode    = args["-A"].(bool)
+		commentsMode  = args["-C"].(bool)
+		removeMode    = args["-R"].(bool)
+		projectsMode  = args["-P"].(bool)
+	)
+
+	switch {
+	case startMode:
+		err = handleStartMode(issueKey, hooks)
+
+	case terminateMode:
+		err = handleTerminateMode(issue, hooks)
+
+	case assignMode:
+		err = handleAssignMode(issue, config.Username)
+
+	case projectsMode:
+		err = handleProjectsMode()
+
+	case commentsMode:
+		commentID := ""
+		if args["<comment>"] != nil {
+			commentID = args["<comment>"].(string)
+		}
+
+		err = handleCommentsMode(issue, listMode, removeMode, commentID)
+
+	case listMode:
+		if issue != nil {
+			err = displayIssue(issue)
+			break
+		}
+
+		var (
+			issueListLimit, _ = strconv.Atoi(args["-c"].(string))
+			kanbanMode        = args["-K"].(bool)
+		)
+
+		err = handleListMode(
+			issue,
+			issueListLimit,
+			kanbanMode,
+			config,
+		)
+
+	case moveMode:
+		transition := ""
+		if args["<transition>"] != nil {
+			transition = args["<transition>"].(string)
+		}
+
+		err = handleMoveMode(issue, transition)
+	}
+
 	if err != nil {
-		fmt.Printf("%s\n", err)
+		fmt.Fprintln(os.Stderr, err.Error())
+		os.Exit(1)
 	}
-	var jiraTag string
-	if arguments["-n"].(bool) == true {
-		jiraTag = arguments["NAME"].(string)
-		tokens := strings.Split(jiraTag, "-")
-		if len(tokens) < 2 {
-			if !strings.Contains(jiraTag, config.ProjectName) {
-				jiraTag = fmt.Sprintf("%s-%s", config.ProjectName, jiraTag)
-			}
+}
 
-		}
-	}
+func handleListMode(
+	issue *gojira.Issue,
+	issueListLimit int,
+	kanbanMode bool,
+	config *Configuration,
+) error {
+	var (
+		search *gojira.JiraSearchIssues
+		err    error
+	)
 
-	if arguments["-L"].(bool) == true || arguments["--list"].(bool) == true {
-		if arguments["-n"].(bool) == true {
-			if arguments["-C"].(bool) == true {
-				printComments(jiraTag)
-			} else {
-				printIssueByKey(jiraTag)
-			}
-		} else {
-			cnt := arguments["--count"].(string)
-			if arguments["-K"].(bool) == true {
-				printKanban(user.Name, cnt)
-			}
-			if arguments["-K"].(bool) == false && arguments["-P"].(bool) == false {
-				printIssues(user.Name, cnt)
-			}
+	if config.Filter != 0 {
+		search, err = searchIssuesByFilterID(config.Filter)
+	} else {
 
-			if arguments["-P"].(bool) == true {
-				printAllProjects()
-			}
-		}
-	}
-
-	if arguments["-M"].(bool) == true || arguments["--move"].(bool) == true {
-		if arguments["-n"].(bool) == true {
-			if arguments["<TRANSITION>"] != nil {
-				transId := arguments["<TRANSITION>"].(string)
-				err := moveIssue(jiraTag, transId)
-				if err != nil {
-					fmt.Println(err)
-				} else {
-					fmt.Println("Issue moved")
-				}
-
-			} else {
-				printTransitionsOfIssue(jiraTag)
-			}
-		}
-	}
-	if arguments["-T"].(bool) == true || arguments["--terminate"].(bool) == true {
-		if arguments["-n"].(bool) == true {
-			err := termProgress(jiraTag)
-			if err != nil {
-				fmt.Println(err)
-			}
-		}
-	}
-
-	if arguments["-S"].(bool) == true || arguments["--start"].(bool) == true {
-		if arguments["-n"].(bool) == true {
-			err := startProgress(jiraTag)
-			if err != nil {
-				fmt.Println(err)
-			} else {
-				fmt.Println("Issue started")
-			}
+		jiraUser, err := gojira.Myself()
+		if err != nil {
+			return err
 		}
 
+		search, err = searchIssues(
+			jiraUser.Name, config.ProjectName, issueListLimit,
+		)
 	}
-	if arguments["-A"].(bool) == true || arguments["--assign"].(bool) == true {
-		if arguments["-n"].(bool) == true {
-			err := assignIssue(jiraTag)
-			if err != nil {
-				fmt.Printf("ERROR: %s\n", err.Error())
-			} else {
-				fmt.Printf("Issue %s assignee to %s\n", jiraTag, config.Username)
-			}
+
+	if err != nil {
+		return err
+	}
+
+	activeIssueKey, err := getActiveIssueKey()
+	if err != nil {
+		return err
+	}
+
+	if kanbanMode {
+		workflowStages := config.Workflow.Stages
+		sort.Sort(KanbanOrderSortableStages(workflowStages))
+
+		board, err := NewKanbanBoard(search.Issues, workflowStages)
+		if err != nil {
+			return err
 		}
 
-	}
-	if arguments["-C"].(bool) == true && arguments["-L"].(bool) == false {
-		if arguments["-n"].(bool) == true {
-			if arguments["-R"].(bool) == false {
-				err := commentIssue(jiraTag)
-				if err != nil {
-					fmt.Printf("ERROR: %s\n", err.Error())
-				} else {
-					fmt.Printf("Issue %s commented\n", jiraTag)
-				}
-			} else {
-				commentId := arguments["<COMMENTID>"].(string)
-				err := removeComment(jiraTag, commentId)
-				if err != nil {
-					fmt.Printf("ERROR: %s\n", err.Error())
-				} else {
-					fmt.Printf("Comment %s removed\n", commentId)
-				}
+		board.GenerateBoardData(activeIssueKey)
 
-			}
+		board.Display()
+
+		return nil
+	} else {
+		return displayIssues(
+			sortIssuesByStatus(search.Issues, config.Workflow.Stages),
+			activeIssueKey,
+		)
+	}
+}
+
+func handleMoveMode(
+	issue *gojira.Issue,
+	transition string,
+) error {
+	if transition == "" {
+		transitions, err := issue.GetTransitions()
+		if err != nil {
+			return err
 		}
 
+		return displayTransitions(transitions)
 	}
 
+	transitionRequest := map[string]interface{}{
+		"transition": map[string]string{
+			"id": transition,
+		},
+	}
+
+	jsonedRequest, err := json.Marshal(transitionRequest)
+	if err != nil {
+		return err
+	}
+
+	err = issue.SetTransition(bytes.NewBuffer(jsonedRequest))
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Issue %s moved\n", issue.Key)
+
+	return nil
+}
+
+func handleTerminateMode(
+	issue *gojira.Issue,
+	hooks Hooks,
+) error {
+	activeIssueKey, err := getActiveIssueKey()
+	if err != nil {
+		return err
+	}
+
+	if activeIssueKey == "" {
+		return fmt.Errorf("You have not started issue")
+	}
+
+	err = stopProgress(issue, hooks)
+
+	return err
+}
+
+func handleStartMode(
+	issueKey string,
+	hooks Hooks,
+) error {
+	activeIssueKey, err := getActiveIssueKey()
+	if err != nil {
+		return err
+	}
+
+	if activeIssueKey != "" {
+		return fmt.Errorf(
+			"You already have started have issue (%s)",
+			activeIssueKey,
+		)
+	}
+
+	err = startProgress(issueKey, hooks)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Issue %s started", issueKey)
+
+	return nil
+}
+
+func handleAssignMode(
+	issue *gojira.Issue,
+	username string,
+) error {
+	err := issue.Assignee(username)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Issue %s successfully assigned to '%s'\n", issue.Key, username)
+
+	return nil
+}
+
+func handleCommentsMode(
+	issue *gojira.Issue, listMode bool, removeMode bool, rawCommentID string,
+) error {
+	switch {
+	case removeMode:
+		commentID, err := strconv.ParseInt(rawCommentID, 10, 64)
+		if err != nil {
+			return err
+		}
+
+		err = issue.DeleteComment(commentID)
+		if err != nil {
+			return nil
+		}
+
+		fmt.Printf("Comment #%d of issue %s removed\n", commentID, issue.Key)
+
+		return nil
+
+	case listMode:
+		comments, err := issue.GetComments()
+		if err != nil {
+			return err
+		}
+
+		return displayComments(comments)
+
+	default:
+		err := addComment(issue)
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("Issue %s successfully commented\n", issue.Key)
+
+		return nil
+	}
+}
+
+func handleProjectsMode() error {
+	projects, err := gojira.GetProjects()
+	if err != nil {
+		return err
+	}
+
+	return displayProjects(projects)
 }
