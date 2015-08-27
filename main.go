@@ -15,7 +15,7 @@ import (
 )
 
 func getArgs() (map[string]interface{}, error) {
-	usage := `Batrak 2.0
+	usage := `Batrak 2.1
 
 	Usage:
 		batrak -L [-n <issue>] [-c <count>]
@@ -23,7 +23,7 @@ func getArgs() (map[string]interface{}, error) {
 		batrak -P
 		batrak -M -n <issue> [<transition>]
 		batrak -S -n <issue>
-		batrak -T -n <issue>
+		batrak -T
 		batrak -A -n <issue>
 		batrak -C -n <issue>
 		batrak -C -L -n <issue>
@@ -42,7 +42,7 @@ func getArgs() (map[string]interface{}, error) {
 		-n <issue>     JIRA issue identifier.
 	`
 
-	return docopt.Parse(usage, nil, true, "Batrak 2.0", false)
+	return docopt.Parse(usage, nil, true, "Batrak 2.1", false)
 }
 
 func main() {
@@ -99,7 +99,7 @@ func main() {
 		err = handleStartMode(issueKey, hooks)
 
 	case terminateMode:
-		err = handleTerminateMode(issue, hooks)
+		err = handleTerminateMode(hooks)
 
 	case assignMode:
 		err = handleAssignMode(issue, config.Username)
@@ -239,7 +239,6 @@ func handleMoveMode(
 }
 
 func handleTerminateMode(
-	issue *gojira.Issue,
 	hooks Hooks,
 ) error {
 	activeIssueKey, err := getActiveIssueKey()
@@ -249,6 +248,11 @@ func handleTerminateMode(
 
 	if activeIssueKey == "" {
 		return fmt.Errorf("You have not started issue")
+	}
+
+	issue, err := gojira.GetIssue(activeIssueKey)
+	if err != nil {
+		return err
 	}
 
 	err = stopProgress(issue, hooks)
@@ -277,7 +281,7 @@ func handleStartMode(
 		return err
 	}
 
-	fmt.Printf("Issue %s started", issueKey)
+	fmt.Printf("Issue %s started\n", issueKey)
 
 	return nil
 }

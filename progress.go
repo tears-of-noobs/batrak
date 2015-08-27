@@ -79,6 +79,11 @@ func stopProgress(issue *gojira.Issue, hooks Hooks) error {
 			stopPromptLoop = true
 
 		case "N":
+			err = issue.SetWorklog(loggingTime, "")
+			if err != nil {
+				return err
+			}
+
 			fmt.Println("Issue progress stopped without logging")
 			stopPromptLoop = true
 
