@@ -60,7 +60,7 @@ func main() {
 
 	gojira.Username = config.Username
 	gojira.Password = config.Password
-	gojira.BaseUrl = config.JiraApiUrl
+	gojira.BaseURL = config.JiraApiUrl
 
 	hooks := NewHooks(config)
 
