@@ -5,17 +5,19 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
 
 	"github.com/docopt/docopt-go"
+	"github.com/kovetskiy/executil"
 	"github.com/tears-of-noobs/gojira"
 )
 
 func getArgs() (map[string]interface{}, error) {
-	usage := `Batrak 3.0
+	usage := `Batrak 3.2
 
    Batrak is a util for working with Jira using command line interface, is
 summoned for increasing your efficiency in working with routine tasks.
@@ -23,14 +25,15 @@ summoned for increasing your efficiency in working with routine tasks.
 Usage:
 	batrak [options] -L [-K]
 	batrak [options] -L <issue>
-	batrak [options] -M <issue> [<transition>]
+	batrak [options] -A <issue>
 	batrak [options] -S <issue>
 	batrak [options] -T <issue>
-	batrak [options] -A <issue>
+	batrak [options] -M <issue> [<transition>]
+	batrak [options] -R <issue> <title>
 	batrak [options] -C <issue>
 	batrak [options] -C -L <issue>
 	batrak [options] -C -L <issue> -R <comment>
-	batrak [options] -R -n <issue>
+	batrak [options] -D <issue>
 
 Options:
     -L --list       List issues using specified filter. You can specify <issue>
@@ -39,19 +42,22 @@ Options:
 				        batrak will list issues in kanban board style.
       -c <count>      Limit amount of issues. [default: 10]
 	  -f <id>         Use specified filter identifier.
-    -M --move       Move specified issue or list available transitions.
-    -S --start      Start working on specified issue.
-    -R --remove     Delete specified issue.
-    -T --terminate  Stop working on specified issue.
     -A --assign     Assign specified issue.
+    -S --start      Start working on specified issue.
+    -T --terminate  Stop working on specified issue.
+    -M --move       Move specified issue or list available transitions.
+    -D --delete     Delete specified issue.
+	-R --rename     Change specified issue title to <title>. If new <title>
+	                  value starts with s/ then <title> will be used as
+					  expression to sed with old title value as input.
     -C --comments   Create comment to specified issue.
 				      Combine this flag with -L (--list) and
 				         batrak will list comments to specified issue.
-				      Combine this flag with -R (--remove) and
-				         batrak will remove specified comment to specified issue.
+				      Combine this flag with -D (--delete) and
+				         batrak will delete specified comment to specified issue.
 `
 
-	return docopt.Parse(usage, nil, true, "Batrak 2.1", false)
+	return docopt.Parse(usage, nil, true, "Batrak 3.2", false)
 }
 
 func main() {
@@ -99,18 +105,26 @@ func main() {
 		terminateMode = args["--terminate"].(bool)
 		assignMode    = args["--assign"].(bool)
 		commentsMode  = args["--comments"].(bool)
-		removeMode    = args["--remove"].(bool)
+		deleteMode    = args["--delete"].(bool)
+		renameMode    = args["--rename"].(bool)
 	)
 
 	switch {
+	case renameMode:
+		var (
+			title = args["<title>"].(string)
+		)
+
+		err = handleRenameMode(issue, title)
+
 	case startMode:
 		err = handleStartMode(issueKey, hooks)
 
 	case terminateMode:
 		err = handleTerminateMode(hooks)
 
-	case removeMode && !commentsMode:
-		err = handleRemoveMode(issue)
+	case deleteMode && !commentsMode:
+		err = handleDeleteMode(issue)
 
 	case assignMode:
 		err = handleAssignMode(issue, config.Username)
@@ -121,7 +135,7 @@ func main() {
 			commentID = args["<comment>"].(string)
 		}
 
-		err = handleCommentsMode(issue, listMode, removeMode, commentID)
+		err = handleCommentsMode(issue, listMode, deleteMode, commentID)
 
 	case listMode:
 		if issue != nil {
@@ -301,7 +315,7 @@ func handleStartMode(
 	return nil
 }
 
-func handleRemoveMode(issue *gojira.Issue) error {
+func handleDeleteMode(issue *gojira.Issue) error {
 	err := issue.Delete()
 	if err != nil {
 		return err
@@ -327,10 +341,10 @@ func handleAssignMode(
 }
 
 func handleCommentsMode(
-	issue *gojira.Issue, listMode bool, removeMode bool, rawCommentID string,
+	issue *gojira.Issue, listMode bool, deleteMode bool, rawCommentID string,
 ) error {
 	switch {
-	case removeMode:
+	case deleteMode:
 		commentID, err := strconv.ParseInt(rawCommentID, 10, 64)
 		if err != nil {
 			return err
@@ -341,7 +355,7 @@ func handleCommentsMode(
 			return nil
 		}
 
-		fmt.Printf("Comment #%d of issue %s removed\n", commentID, issue.Key)
+		fmt.Printf("Comment #%d of issue %s deleted\n", commentID, issue.Key)
 
 		return nil
 
@@ -363,4 +377,28 @@ func handleCommentsMode(
 
 		return nil
 	}
+}
+
+func handleRenameMode(
+	issue *gojira.Issue, title string,
+) error {
+	if strings.HasPrefix(title, "s/") {
+		cmd := exec.Command("sed", "-r", title)
+		cmd.Stdin = bytes.NewBufferString(issue.Fields.Summary)
+		seded, _, err := executil.Run(cmd)
+		if err != nil {
+			return err
+		}
+
+		title = string(seded)
+	}
+
+	err := issue.SetSummary(title)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(issue.Key + " successfully renamed to: " + title)
+
+	return nil
 }
