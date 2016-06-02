@@ -2,19 +2,24 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"text/tabwriter"
 
 	"github.com/tears-of-noobs/gojira"
 )
 
 func displayIssues(issues []gojira.Issue, activeIssueKey string) error {
+	board := tabwriter.NewWriter(os.Stdout, 1, 4, 2, ' ', 0)
+
 	for _, issue := range issues {
 		issueMark := ""
 		if issue.Key == activeIssueKey {
-			issueMark = "*"
+			issueMark = "* "
 		}
 
-		fmt.Printf(
-			"%2s %10s %15s %13s %s\n",
+		fmt.Fprintf(
+			board,
+			"%s%s\t%s\t%s\t%s\n",
 			issueMark,
 			issue.Key,
 			issue.Fields.Status.Name,
@@ -22,6 +27,8 @@ func displayIssues(issues []gojira.Issue, activeIssueKey string) error {
 			issue.Fields.Summary,
 		)
 	}
+
+	board.Flush()
 
 	return nil
 }
