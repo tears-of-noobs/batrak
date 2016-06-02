@@ -30,6 +30,7 @@ Usage:
 	batrak -C <issue>
 	batrak -C -L <issue>
 	batrak -C -L <issue> -R <comment>
+	batrak -R -n <issue>
 
 Options:
     -L --list       List issues using specified filter. You can specify <issue>
@@ -39,6 +40,7 @@ Options:
       -c <count>      Limit amount of issues. [default: 10]
     -M --move       Move specified issue or list available transitions.
     -S --start      Start working on specified issue.
+    -R --remove     Delete specified issue.
     -T --terminate  Stop working on specified issue.
     -A --assign     Assign specified issue.
     -C --comments   Create comment to specified issue.
@@ -105,6 +107,9 @@ func main() {
 
 	case terminateMode:
 		err = handleTerminateMode(hooks)
+
+	case removeMode && !commentsMode:
+		err = handleRemoveMode(issue)
 
 	case assignMode:
 		err = handleAssignMode(issue, config.Username)
@@ -284,6 +289,17 @@ func handleStartMode(
 	}
 
 	fmt.Printf("Issue %s started\n", issueKey)
+
+	return nil
+}
+
+func handleRemoveMode(issue *gojira.Issue) error {
+	err := issue.Delete()
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Issue %s deleted\n", issue.Key)
 
 	return nil
 }
