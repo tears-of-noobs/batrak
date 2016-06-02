@@ -15,32 +15,38 @@ import (
 )
 
 func getArgs() (map[string]interface{}, error) {
-	usage := `Batrak 2.1
+	usage := `Batrak 3.0
 
-	Usage:
-		batrak -L [-n <issue>] [-c <count>]
-		batrak -L -K [-c <count>]
-		batrak -P
-		batrak -M -n <issue> [<transition>]
-		batrak -S -n <issue>
-		batrak -T
-		batrak -A -n <issue>
-		batrak -C -n <issue>
-		batrak -C -L -n <issue>
-		batrak -C -L -n <issue> [-R] [<comment>]
+   Batrak is a util for working with Jira using command line interface, is
+summoned for increasing your efficiency in working with routine tasks.
 
-	Commands:
-		-L   List mode.
-		-M   Move mode.
-		-S   Start progress mode.
-		-A   Assign issue mode.
-		-C   Comments mode.
-		-P   Projects mode.
+Usage:
+	batrak -L [-K]
+	batrak -L <issue>
+	batrak -M <issue> [<transition>]
+	batrak -S <issue>
+	batrak -T <issue>
+	batrak -A <issue>
+	batrak -C <issue>
+	batrak -C -L <issue>
+	batrak -C -L <issue> -R <comment>
 
-	Options:
-		-c <count>     Count of displayed issues [default: 10].
-		-n <issue>     JIRA issue identifier.
-	`
+Options:
+    -L --list       List issues using specified filter. You can specify <issue>
+                      identifier and see issue details.
+				      Combine this flag with -K (--kanban) and
+				        batrak will list issues in kanban board style.
+      -c <count>      Limit amount of issues. [default: 10]
+    -M --move       Move specified issue or list available transitions.
+    -S --start      Start working on specified issue.
+    -T --terminate  Stop working on specified issue.
+    -A --assign     Assign specified issue.
+    -C --comments   Create comment to specified issue.
+				      Combine this flag with -L (--list) and
+				         batrak will list comments to specified issue.
+				      Combine this flag with -R (--remove) and
+				         batrak will remove specified comment to specified issue.
+`
 
 	return docopt.Parse(usage, nil, true, "Batrak 2.1", false)
 }
@@ -91,7 +97,6 @@ func main() {
 		assignMode    = args["-A"].(bool)
 		commentsMode  = args["-C"].(bool)
 		removeMode    = args["-R"].(bool)
-		projectsMode  = args["-P"].(bool)
 	)
 
 	switch {
@@ -103,9 +108,6 @@ func main() {
 
 	case assignMode:
 		err = handleAssignMode(issue, config.Username)
-
-	case projectsMode:
-		err = handleProjectsMode()
 
 	case commentsMode:
 		commentID := ""
@@ -337,13 +339,4 @@ func handleCommentsMode(
 
 		return nil
 	}
-}
-
-func handleProjectsMode() error {
-	projects, err := gojira.GetProjects()
-	if err != nil {
-		return err
-	}
-
-	return displayProjects(projects)
 }

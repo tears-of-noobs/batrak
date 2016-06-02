@@ -26,26 +26,18 @@ func displayIssues(issues []gojira.Issue, activeIssueKey string) error {
 	return nil
 }
 
-func displayProjects(projects []*gojira.Project) error {
-	for _, project := range projects {
-		fmt.Printf("%s %-15s %s\n", project.Id, project.Key, project.Name)
-	}
-
-	return nil
-}
-
 func displayIssue(issue *gojira.Issue) error {
-	fmt.Printf("Issue: %s\n", issue.Key)
+	fmt.Printf("Issue:    %s\n", issue.Key)
 	fmt.Printf("Assignee: %s\n", issue.Fields.Assignee.DisplayName)
-	fmt.Printf("Status: %s\n", issue.Fields.Status.Name)
-	fmt.Printf("Summary: %s\n\n", issue.Fields.Summary)
+	fmt.Printf("Status:   %s\n", issue.Fields.Status.Name)
+	fmt.Printf("Summary:  %s\n\n", issue.Fields.Summary)
 
 	desc := "<no description>"
 	if issue.Fields.Description != nil {
 		desc = issue.Fields.Description.(string)
 	}
 
-	fmt.Printf("Description: \n%s\n", desc)
+	fmt.Printf("%s\n", desc)
 
 	return nil
 }
@@ -61,7 +53,7 @@ func displayTransitions(transitions *gojira.Transitions) error {
 func displayComments(comments *gojira.Comments) error {
 	for _, comment := range comments.Comments {
 		fmt.Printf("\n################\n")
-		fmt.Printf("ID: %s\n", comment.Id)
+		fmt.Printf("ID:     %s\n", comment.Id)
 		fmt.Printf("Author: %s\n", comment.Author.DisplayName)
 		fmt.Printf("Update: %s\n", comment.Updated)
 		fmt.Printf("Comment: \n%s\n", comment.Body)
