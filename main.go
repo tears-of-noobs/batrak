@@ -38,6 +38,7 @@ Options:
 				      Combine this flag with -K (--kanban) and
 				        batrak will list issues in kanban board style.
       -c <count>      Limit amount of issues. [default: 10]
+	  -f <id>         Use specified filter identifier.
     -M --move       Move specified issue or list available transitions.
     -S --start      Start working on specified issue.
     -R --remove     Delete specified issue.
@@ -129,13 +130,16 @@ func main() {
 		}
 
 		var (
-			issueListLimit, _ = strconv.Atoi(args["-c"].(string))
-			kanbanMode        = args["-K"].(bool)
+			kanbanMode     = args["-K"].(bool)
+			rawLimit, _    = args["-c"].(string)
+			rawFilterID, _ = args["-f"].(string)
+			limit, _       = strconv.Atoi(rawLimit)
+			filterID, _    = strconv.Atoi(rawFilterID)
 		)
 
 		err = handleListMode(
-			issue,
-			issueListLimit,
+			filterID,
+			limit,
 			kanbanMode,
 			config,
 		)
@@ -156,8 +160,8 @@ func main() {
 }
 
 func handleListMode(
-	issue *gojira.Issue,
-	issueListLimit int,
+	filterID int,
+	limit int,
 	kanbanMode bool,
 	config *Configuration,
 ) error {
@@ -166,8 +170,12 @@ func handleListMode(
 		err    error
 	)
 
-	if config.Filter != 0 {
-		search, err = searchIssuesByFilterID(config.Filter)
+	if filterID == 0 {
+		filterID = config.Filter
+	}
+
+	if filterID != 0 {
+		search, err = searchIssuesByFilterID(filterID)
 	} else {
 
 		jiraUser, err := gojira.Myself()
@@ -176,7 +184,7 @@ func handleListMode(
 		}
 
 		search, err = searchIssues(
-			jiraUser.Name, config.ProjectName, issueListLimit,
+			jiraUser.Name, config.ProjectName, limit,
 		)
 	}
 
