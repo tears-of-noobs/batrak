@@ -21,16 +21,16 @@ func getArgs() (map[string]interface{}, error) {
 summoned for increasing your efficiency in working with routine tasks.
 
 Usage:
-	batrak -L [-K]
-	batrak -L <issue>
-	batrak -M <issue> [<transition>]
-	batrak -S <issue>
-	batrak -T <issue>
-	batrak -A <issue>
-	batrak -C <issue>
-	batrak -C -L <issue>
-	batrak -C -L <issue> -R <comment>
-	batrak -R -n <issue>
+	batrak [options] -L [-K]
+	batrak [options] -L <issue>
+	batrak [options] -M <issue> [<transition>]
+	batrak [options] -S <issue>
+	batrak [options] -T <issue>
+	batrak [options] -A <issue>
+	batrak [options] -C <issue>
+	batrak [options] -C -L <issue>
+	batrak [options] -C -L <issue> -R <comment>
+	batrak [options] -R -n <issue>
 
 Options:
     -L --list       List issues using specified filter. You can specify <issue>
@@ -74,8 +74,8 @@ func main() {
 
 	var issueKey string
 	var issue *gojira.Issue
-	if args["-n"] != nil {
-		issueKey = args["-n"].(string)
+	if args["<issue>"] != nil {
+		issueKey = args["<issue>"].(string)
 
 		issueKeyPieces := strings.Split(issueKey, "-")
 		if len(issueKeyPieces) < 2 {
@@ -92,13 +92,13 @@ func main() {
 	}
 
 	var (
-		listMode      = args["-L"].(bool)
-		moveMode      = args["-M"].(bool)
-		startMode     = args["-S"].(bool)
-		terminateMode = args["-T"].(bool)
-		assignMode    = args["-A"].(bool)
-		commentsMode  = args["-C"].(bool)
-		removeMode    = args["-R"].(bool)
+		listMode      = args["--list"].(bool)
+		moveMode      = args["--move"].(bool)
+		startMode     = args["--start"].(bool)
+		terminateMode = args["--terminate"].(bool)
+		assignMode    = args["--assign"].(bool)
+		commentsMode  = args["--comments"].(bool)
+		removeMode    = args["--remove"].(bool)
 	)
 
 	switch {
