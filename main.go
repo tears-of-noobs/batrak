@@ -42,6 +42,7 @@ Options:
 				        batrak will list issues in kanban board style.
       -c <count>      Limit amount of issues. [default: 10]
 	  -f <id>         Use specified filter identifier.
+      -w --show-name  Show issue assignee username instead of "Display Name".
     -A --assign     Assign specified issue.
     -S --start      Start working on specified issue.
     -T --terminate  Stop working on specified issue.
@@ -149,6 +150,7 @@ func main() {
 			rawFilterID, _ = args["-f"].(string)
 			limit, _       = strconv.Atoi(rawLimit)
 			filterID, _    = strconv.Atoi(rawFilterID)
+			showName       = args["--show-name"].(bool)
 		)
 
 		err = handleListMode(
@@ -156,6 +158,7 @@ func main() {
 			limit,
 			kanbanMode,
 			config,
+			showName,
 		)
 
 	case moveMode:
@@ -178,6 +181,7 @@ func handleListMode(
 	limit int,
 	kanbanMode bool,
 	config *Configuration,
+	showName bool,
 ) error {
 	var (
 		search *gojira.JiraSearchIssues
@@ -228,7 +232,7 @@ func handleListMode(
 	} else {
 		return displayIssues(
 			sortIssuesByStatus(search.Issues, config.Workflow.Stages),
-			activeIssueKey,
+			activeIssueKey, showName,
 		)
 	}
 }

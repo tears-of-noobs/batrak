@@ -8,7 +8,11 @@ import (
 	"github.com/tears-of-noobs/gojira"
 )
 
-func displayIssues(issues []gojira.Issue, activeIssueKey string) error {
+func displayIssues(
+	issues []gojira.Issue,
+	activeIssueKey string,
+	showName bool,
+) error {
 	board := tabwriter.NewWriter(os.Stdout, 1, 4, 2, ' ', 0)
 
 	for _, issue := range issues {
@@ -17,13 +21,16 @@ func displayIssues(issues []gojira.Issue, activeIssueKey string) error {
 			issueMark = "* "
 		}
 
+		name := issue.Fields.Assignee.Name
+		if !showName {
+			name = issue.Fields.Assignee.DisplayName
+		}
+
 		fmt.Fprintf(
 			board,
 			"%s%s\t%s\t%s\t%s\n",
-			issueMark,
-			issue.Key,
-			issue.Fields.Status.Name,
-			issue.Fields.Assignee.DisplayName,
+			issueMark, issue.Key,
+			issue.Fields.Status.Name, name,
 			issue.Fields.Summary,
 		)
 	}
