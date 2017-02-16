@@ -12,7 +12,7 @@ import (
 	"strings"
 
 	"github.com/docopt/docopt-go"
-	"github.com/kovetskiy/executil"
+	"github.com/reconquest/executil-go"
 	"github.com/tears-of-noobs/gojira"
 )
 
