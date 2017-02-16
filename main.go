@@ -23,39 +23,39 @@ func getArgs() (map[string]interface{}, error) {
 summoned for increasing your efficiency in working with routine tasks.
 
 Usage:
-	batrak [options] -L [-K]
-	batrak [options] -L <issue>
-	batrak [options] -A <issue>
-	batrak [options] -S <issue>
-	batrak [options] -T <issue>
-	batrak [options] -M <issue> [<transition>]
-	batrak [options] -R <issue> <title>
-	batrak [options] -C <issue>
-	batrak [options] -C -L <issue>
-	batrak [options] -C -L <issue> -R <comment>
-	batrak [options] -D <issue>
+    batrak [options] -L [-K]
+    batrak [options] -L <issue>
+    batrak [options] -A <issue>
+    batrak [options] -S <issue>
+    batrak [options] -T <issue>
+    batrak [options] -M <issue> [<transition>]
+    batrak [options] -R <issue> <title>
+    batrak [options] -C <issue>
+    batrak [options] -C -L <issue>
+    batrak [options] -C -L <issue> -R <comment>
+    batrak [options] -D <issue>
 
 Options:
     -L --list       List issues using specified filter. You can specify <issue>
                       identifier and see issue details.
-				      Combine this flag with -K (--kanban) and
-				        batrak will list issues in kanban board style.
+                      Combine this flag with -K (--kanban) and
+                        batrak will list issues in kanban board style.
       -c <count>      Limit amount of issues. [default: 10]
-	  -f <id>         Use specified filter identifier.
+      -f <id>         Use specified filter identifier.
       -w --show-name  Show issue assignee username instead of "Display Name".
     -A --assign     Assign specified issue.
     -S --start      Start working on specified issue.
     -T --terminate  Stop working on specified issue.
     -M --move       Move specified issue or list available transitions.
     -D --delete     Delete specified issue.
-	-R --rename     Change specified issue title to <title>. If new <title>
-	                  value starts with s/ then <title> will be used as
-					  expression to sed with old title value as input.
+    -R --rename     Change specified issue title to <title>. If new <title>
+                      value starts with s/ then <title> will be used as
+                      expression to sed with old title value as input.
     -C --comments   Create comment to specified issue.
-				      Combine this flag with -L (--list) and
-				         batrak will list comments to specified issue.
-				      Combine this flag with -D (--delete) and
-				         batrak will delete specified comment to specified issue.
+                      Combine this flag with -L (--list) and
+                         batrak will list comments to specified issue.
+                      Combine this flag with -D (--delete) and
+                         batrak will delete specified comment to specified issue.
 `
 
 	return docopt.Parse(usage, nil, true, "Batrak 3.2", false)
