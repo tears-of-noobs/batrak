@@ -22,10 +22,21 @@ type Workflow struct {
 	Stages      []Stage  `toml:"stage"`
 }
 
+func (workflow *Workflow) GetStage(name string) (Stage, bool) {
+	for _, stage := range workflow.Stages {
+		if stage.Name == name {
+			return stage, true
+		}
+	}
+
+	return Stage{}, false
+}
+
 type Stage struct {
 	Name        string `toml:"name"`
 	Order       int    `toml:"order"`
 	KanbanOrder int    `toml:"kanban_order"`
+	Template    string `toml:"template"`
 }
 
 func getConfig(filePath string) (*Configuration, error) {

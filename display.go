@@ -1,24 +1,44 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
-	"os"
 	"text/tabwriter"
+	"text/template"
 
+	"github.com/reconquest/karma-go"
+	"github.com/reconquest/loreley"
+	"github.com/seletskiy/tplutil"
 	"github.com/tears-of-noobs/gojira"
+)
+
+var (
+	DefaultTemplate = template.Must(
+		template.New("default").Parse(
+			"{{.mark}}{{.key}}\t{{.stage}}\t{{.name}}\t{{.summary}}",
+		),
+	)
 )
 
 func displayIssues(
 	issues []gojira.Issue,
 	activeIssueKey string,
 	showName bool,
+	workflow Workflow,
 ) error {
-	board := tabwriter.NewWriter(os.Stdout, 1, 4, 2, ' ', 0)
+	var err error
+
+	buffer := bytes.NewBuffer(nil)
+	board := tabwriter.NewWriter(buffer, 1, 4, 2, ' ', tabwriter.FilterHTML)
+
+	templates := map[string]*template.Template{}
 
 	for _, issue := range issues {
 		issueMark := ""
+		isActive := false
 		if issue.Key == activeIssueKey {
 			issueMark = "* "
+			isActive = true
 		}
 
 		name := issue.Fields.Assignee.Name
@@ -26,16 +46,65 @@ func displayIssues(
 			name = issue.Fields.Assignee.DisplayName
 		}
 
-		fmt.Fprintf(
-			board,
-			"%s%s\t%s\t%s\t%s\n",
-			issueMark, issue.Key,
-			issue.Fields.Status.Name, name,
-			issue.Fields.Summary,
-		)
+		view := map[string]interface{}{
+			"is_active":             isActive,
+			"mark":                  issueMark,
+			"key":                   issue.Key,
+			"stage":                 issue.Fields.Status.Name,
+			"name":                  name,
+			"assignee_name":         issue.Fields.Assignee.Name,
+			"assignee_display_name": issue.Fields.Assignee.DisplayName,
+			"summary":               issue.Fields.Summary,
+		}
+
+		tpl := DefaultTemplate
+
+		if stage, ok := workflow.GetStage(issue.Fields.Status.Name); ok {
+			if stage.Template != "" {
+				tpl, ok = templates[issue.Fields.Status.Name]
+				if !ok {
+					tpl = template.New(issue.Fields.Status.Name)
+					tpl, err = tpl.Parse(stage.Template)
+					if err != nil {
+						return karma.Format(
+							err,
+							"unable to parse template: %s",
+							issue.Fields.Status.Name,
+						)
+					}
+				}
+			}
+		}
+
+		contents, err := tplutil.ExecuteToString(tpl, view)
+		if err != nil {
+			return karma.Format(
+				err,
+				"unable to execute template: %s", tpl.Name(),
+			)
+		}
+
+		board.Write([]byte(contents + "\n"))
 	}
 
 	board.Flush()
+
+	loreley.DelimLeft = "<"
+	loreley.DelimRight = ">"
+
+	result, err := loreley.CompileAndExecuteToString(
+		buffer.String(),
+		nil,
+		nil,
+	)
+	if err != nil {
+		return karma.Format(
+			err,
+			"unable to colorize output",
+		)
+	}
+
+	fmt.Print(result)
 
 	return nil
 }

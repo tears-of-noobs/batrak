@@ -244,6 +244,7 @@ func handleListMode(
 		return displayIssues(
 			sortIssuesByStatus(search.Issues, config.Workflow.Stages),
 			activeIssueKey, showName,
+			config.Workflow,
 		)
 	}
 }
