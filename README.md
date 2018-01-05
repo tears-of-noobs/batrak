@@ -21,8 +21,10 @@ password = "JIRA_PASSWORD"
 jira_api_url = "http://JIRA.DOMAIN/rest/api/2"
 project_name = "JIRA_PROJECT_NAME"
 ```
+
 also, if you know filter ID in JIRA you may define it in config.
-```toml
+
+```
 filter_id = JIRA_FILTER_ID
 ```
 
@@ -38,10 +40,6 @@ Just add following lines in you config with status and order description
     name = "Analysis"
     order = 2
     kanban_order = 1
-    .
-    .
-    .
-    .
 ```
 
 You can specify workflow configuration in separated file and then specify path
