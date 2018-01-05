@@ -15,20 +15,20 @@ vim ~/.batrakrc
 
 and fill it with the following parameters
 
-```
+```toml
 username = "JIRA_USERNAME"
 password = "JIRA_PASSWORD"
 jira_api_url = "http://JIRA.DOMAIN/rest/api/2"
 project_name = "JIRA_PROJECT_NAME"
 ```
 also, if you know filter ID in JIRA you may define it in config.
-```
+```toml
 filter_id = JIRA_FILTER_ID
 ```
 
 You may manually ordering print issues by status.
 Just add following lines in you config with status and order description
-```
+```toml
 [workflow]
   [[workflow.stage]]
     name = "In progress"
@@ -43,6 +43,22 @@ Just add following lines in you config with status and order description
     .
     .
 ```
+
+You can specify workflow configuration in separated file and then specify path
+to this file using `--workflow <path>` flag. Workflow configuration in this
+case will be without `workflow.` prefix:
+
+```toml
+[[stage]]
+    name = "In progress"
+    order = 1
+    kanban_order = 2
+[[stage]]
+    name = "Analysis"
+    order = 2
+    kanban_order = 1
+```
+
 Batrak support hooks (pre_start, post_start, pre_stop, post_stop)
 Hook - it just binary file or script that takes two string arguments:
 * Jira issue Key - "TEST-100"
