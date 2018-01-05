@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -17,7 +16,7 @@ import (
 )
 
 func getArgs() (map[string]interface{}, error) {
-	usage := `Batrak 3.2
+	usage := `Batrak 3.3
 
    Batrak is a util for working with Jira using command line interface, is
 summoned for increasing your efficiency in working with routine tasks.
@@ -36,29 +35,33 @@ Usage:
     batrak [options] -D <issue>
 
 Options:
-    -L --list       List issues using specified filter. You can specify <issue>
-                      identifier and see issue details.
-                      Combine this flag with -K (--kanban) and
-                        batrak will list issues in kanban board style.
+    -L --list         List issues using specified filter. You can specify <issue>
+                       identifier and see issue details.
+                       Combine this flag with -K (--kanban) and
+                       batrak will list issues in kanban board style.
       -c <count>      Limit amount of issues. [default: 10]
       -f <id>         Use specified filter identifier.
       -w --show-name  Show issue assignee username instead of "Display Name".
-    -A --assign     Assign specified issue.
-    -S --start      Start working on specified issue.
-    -T --terminate  Stop working on specified issue.
-    -M --move       Move specified issue or list available transitions.
-    -D --delete     Delete specified issue.
-    -R --rename     Change specified issue title to <title>. If new <title>
-                      value starts with s/ then <title> will be used as
-                      expression to sed with old title value as input.
-    -C --comments   Create comment to specified issue.
-                      Combine this flag with -L (--list) and
-                         batrak will list comments to specified issue.
-                      Combine this flag with -D (--delete) and
-                         batrak will delete specified comment to specified issue.
+    -A --assign       Assign specified issue.
+    -S --start        Start working on specified issue.
+    -T --terminate    Stop working on specified issue.
+    -M --move         Move specified issue or list available transitions.
+    -D --delete       Delete specified issue.
+    -R --rename       Change specified issue title to <title>. If new <title>
+                       value starts with s/ then <title> will be used as
+                       expression to sed with old title value as input.
+    -C --comments     Create comment to specified issue.
+                       Combine this flag with -L (--list) and
+                       batrak will list comments to specified issue.
+                       Combine this flag with -D (--delete) and
+                       batrak will delete specified comment to specified issue.
+  --config <path>     Use specified configuration file.
+                       [default: $HOME/.batrakrc]
+  --workflow <path>   Rewrite configuration workflow using specified file.
+  -v --version        Show version of the program.
 `
 
-	return docopt.Parse(usage, nil, true, "Batrak 3.2", false)
+	return docopt.Parse(os.ExpandEnv(usage), nil, true, "Batrak 3.3", false)
 }
 
 func main() {
@@ -68,10 +71,18 @@ func main() {
 		os.Exit(1)
 	}
 
-	config, err := getConfig(filepath.Join(os.Getenv("HOME"), ".batrakrc"))
+	config, err := getConfig(args["--config"].(string))
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
 		os.Exit(1)
+	}
+
+	if path, ok := args["--workflow"].(string); ok {
+		err := loadWorkflow(path, &config.Workflow)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err.Error())
+			os.Exit(1)
+		}
 	}
 
 	gojira.Username = config.Username

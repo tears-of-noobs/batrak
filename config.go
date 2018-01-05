@@ -65,3 +65,12 @@ func (config *Configuration) getUserCredentials() string {
 		config.Username, config.Password, config.JiraApiUrl,
 	)
 }
+
+func loadWorkflow(path string, workflow *Workflow) error {
+	_, err := toml.DecodeFile(path, &workflow)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
