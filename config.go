@@ -63,8 +63,6 @@ func (config *Configuration) Validate() error {
 		return errors.New("Password is empty")
 	case config.JiraApiUrl == "":
 		return errors.New("URL to Jira API is empty")
-	case config.ProjectName == "":
-		return errors.New(" Project name is empty")
 	}
 
 	return nil

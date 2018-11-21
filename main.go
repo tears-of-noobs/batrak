@@ -57,6 +57,7 @@ Options:
                        batrak will delete specified comment to specified issue.
   --config <path>     Use specified configuration file.
                        [default: $HOME/.batrakrc]
+  -p <project>        Use specified project name instead of config.
   --workflow <path>   Rewrite configuration workflow using specified file.
   -v --version        Show version of the program.
 `
@@ -89,6 +90,10 @@ func main() {
 	gojira.Password = config.Password
 	gojira.BaseURL = config.JiraApiUrl
 
+	if projectName, ok := args["-p"].(string); ok {
+		config.ProjectName = projectName
+	}
+
 	hooks := NewHooks(config)
 
 	var issueKey string
@@ -101,6 +106,8 @@ func main() {
 			if !strings.Contains(issueKey, config.ProjectName) {
 				issueKey = fmt.Sprintf("%s-%s", config.ProjectName, issueKey)
 			}
+		} else if config.ProjectName == "" {
+			config.ProjectName = issueKeyPieces[0]
 		}
 
 		issue, err = gojira.GetIssue(issueKey)
@@ -108,6 +115,16 @@ func main() {
 			fmt.Fprintln(os.Stderr, err.Error())
 			os.Exit(1)
 		}
+	}
+
+	if config.ProjectName == "" {
+		fmt.Fprintln(
+			os.Stderr,
+			"project name is empty, "+
+				"you can specify it in config, "+
+				"pass -p flag or just specify an issue",
+		)
+		os.Exit(1)
 	}
 
 	var (
