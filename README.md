@@ -85,13 +85,13 @@ batrak -L --count=2
 
 ##### Show issue (Name, Status, Description)
 ```
-batrak -Ln TEST-100
+batrak -L TEST-100
 ```
 
 or if you watch issue in your JIRA_PROJECT_NAME
 
 ```
-batrak -Ln 100
+batrak -L 100
 ```
 
 ##### Show kanban (works if you describe your workflow in config file)
@@ -101,42 +101,42 @@ batrak -LK
 
 ##### Assign issue
 ```
-batrak -An TEST-100
+batrak -A TEST-100
 ```
 
 ##### Show comments 
 ```
-batrak -LCn TEST-100
+batrak -LC TEST-100
 ```
 
 ##### Write comment
 ```
-batrak -Cn TEST-100
+batrak -C TEST-100
 ```
 
 ##### Remove comment
 ```
-batrak -RCn TEST-100 COMMENT_ID
+batrak -RC TEST-100 COMMENT_ID
 ```
 
 ##### Show available transitions for issue 
 ```
-batrak -Mn TEST-100
+batrak -M TEST-100
 ```
 
 ##### Move issue 
 ```
-batrak -Mn TEST-100 TRANSITION_ID
+batrak -M TEST-100 TRANSITION_ID
 ``` 
 
 ##### Start issue 
 ```
-batrak -Sn TEST-100
+batrak -S TEST-100
 ``` 
 
 ##### Stop issue with logging work
 ```
-batrak -Tn TEST-100
+batrak -T TEST-100
 ``` 
 
 
