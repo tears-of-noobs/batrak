@@ -12,6 +12,7 @@ import (
 
 	"github.com/docopt/docopt-go"
 	"github.com/reconquest/executil-go"
+	"github.com/reconquest/karma-go"
 	"github.com/tears-of-noobs/gojira"
 )
 
@@ -39,7 +40,7 @@ Options:
                        identifier and see issue details.
                        Combine this flag with -K (--kanban) and
                        batrak will list issues in kanban board style.
-      -c <count>      Limit amount of issues. [default: 10]
+      -c <count>      Limit amount of issues. [default: 30]
       -f <id>         Use specified filter identifier.
       -w --show-name  Show issue assignee username instead of "Display Name".
     -A --assign       Assign specified issue.
@@ -88,7 +89,7 @@ func main() {
 
 	gojira.Username = config.Username
 	gojira.Password = config.Password
-	gojira.BaseURL = config.JiraApiUrl
+	gojira.BaseURL = strings.TrimSuffix(config.JiraApiUrl, "/")
 
 	if projectName, ok := args["-p"].(string); ok {
 		config.ProjectName = projectName
@@ -140,9 +141,7 @@ func main() {
 
 	switch {
 	case renameMode:
-		var (
-			title = args["<title>"].(string)
-		)
+		title := args["<title>"].(string)
 
 		err = handleRenameMode(issue, title)
 
@@ -222,20 +221,30 @@ func handleListMode(
 
 	if filterID != 0 {
 		search, err = searchIssuesByFilterID(filterID)
+		if err != nil {
+			return karma.Format(
+				err,
+				"unable to search issues by filter: %d", filterID,
+			)
+		}
 	} else {
-
 		jiraUser, err := gojira.Myself()
 		if err != nil {
-			return err
+			return karma.Format(
+				err,
+				"unable to get current user info",
+			)
 		}
 
 		search, err = searchIssues(
 			jiraUser.Name, config.ProjectName, limit,
 		)
-	}
-
-	if err != nil {
-		return err
+		if err != nil {
+			return karma.Format(
+				err,
+				"unable to search issues by project: %s", config.ProjectName,
+			)
+		}
 	}
 
 	activeIssueKey, err := getActiveIssueKey()
