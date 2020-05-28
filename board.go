@@ -14,6 +14,7 @@ type kanbanBoard struct {
 	tableRows    [][]string
 	tableHeaders []string
 	showSummary  bool
+	showName     bool
 }
 
 type KanbanOrderSortableStages []Stage
@@ -34,6 +35,7 @@ func NewKanbanBoard(
 	issues []gojira.Issue,
 	workflowStages []Stage,
 	showSummary bool,
+	showName bool,
 ) (kanbanBoard, error) {
 	if len(workflowStages) == 0 {
 		return kanbanBoard{}, fmt.Errorf("kanban stages are not defined")
@@ -43,6 +45,7 @@ func NewKanbanBoard(
 		issues:      issues,
 		stages:      workflowStages,
 		showSummary: showSummary,
+		showName:    showName,
 	}
 
 	return board, nil
@@ -96,6 +99,10 @@ func (board *kanbanBoard) GenerateBoardData(activeIssueKey string) {
 
 			if board.showSummary {
 				item += " " + issue.Fields.Summary
+			}
+
+			if board.showName {
+				item += " (" + issue.Fields.Assignee.Name + ")"
 			}
 
 			board.tableRows[rowIndex][headerIndex] = item

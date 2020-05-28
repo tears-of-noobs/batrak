@@ -279,7 +279,7 @@ func handleListMode(
 		workflowStages := config.Workflow.Stages
 		sort.Sort(KanbanOrderSortableStages(workflowStages))
 
-		board, err := NewKanbanBoard(search.Issues, workflowStages, showSummary)
+		board, err := NewKanbanBoard(search.Issues, workflowStages, showSummary, showName)
 		if err != nil {
 			return err
 		}
