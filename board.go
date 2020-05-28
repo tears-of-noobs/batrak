@@ -13,6 +13,7 @@ type kanbanBoard struct {
 	stages       []Stage
 	tableRows    [][]string
 	tableHeaders []string
+	showSummary  bool
 }
 
 type KanbanOrderSortableStages []Stage
@@ -20,9 +21,11 @@ type KanbanOrderSortableStages []Stage
 func (sortable KanbanOrderSortableStages) Len() int {
 	return len(sortable)
 }
+
 func (sortable KanbanOrderSortableStages) Swap(i, j int) {
 	sortable[i], sortable[j] = sortable[j], sortable[i]
 }
+
 func (sortable KanbanOrderSortableStages) Less(i, j int) bool {
 	return sortable[i].KanbanOrder < sortable[j].KanbanOrder
 }
@@ -30,23 +33,27 @@ func (sortable KanbanOrderSortableStages) Less(i, j int) bool {
 func NewKanbanBoard(
 	issues []gojira.Issue,
 	workflowStages []Stage,
+	showSummary bool,
 ) (kanbanBoard, error) {
 	if len(workflowStages) == 0 {
-		return kanbanBoard{}, fmt.Errorf("kanban stages is not defined")
+		return kanbanBoard{}, fmt.Errorf("kanban stages are not defined")
 	}
 
 	board := kanbanBoard{
-		issues: issues,
-		stages: workflowStages,
+		issues:      issues,
+		stages:      workflowStages,
+		showSummary: showSummary,
 	}
 
 	return board, nil
 }
 
 func (board *kanbanBoard) GenerateBoardData(activeIssueKey string) {
-	board.tableHeaders = make([]string, len(board.stages))
-	for headerIndex, stage := range board.stages {
-		board.tableHeaders[headerIndex] = stage.Name
+	board.tableHeaders = []string{}
+	for _, stage := range board.stages {
+		if stage.KanbanOrder != 0 {
+			board.tableHeaders = append(board.tableHeaders, stage.Name)
+		}
 	}
 
 	stageIssuesMap := map[string][]gojira.Issue{}
@@ -79,19 +86,31 @@ func (board *kanbanBoard) GenerateBoardData(activeIssueKey string) {
 				more = true
 			}
 
-			board.tableRows[rowIndex][headerIndex] = stageIssuesMap[stage][0].Key
+			issue := stageIssuesMap[stage][0]
 
-			if board.tableRows[rowIndex][headerIndex] == activeIssueKey {
-				board.tableRows[rowIndex][headerIndex] = "*" +
-					board.tableRows[rowIndex][headerIndex]
+			item := issue.Key
+
+			if issue.Key == activeIssueKey {
+				item = "*" + item
 			}
+
+			if board.showSummary {
+				item += " " + issue.Fields.Summary
+			}
+
+			board.tableRows[rowIndex][headerIndex] = item
 
 			stageIssuesMap[stage] = stageIssuesMap[stage][1:]
 		}
 	}
 }
+
 func (board kanbanBoard) Display() {
 	table := tablewriter.NewWriter(os.Stdout)
+	if board.showSummary {
+		table.SetRowLine(true)
+		table.SetRowSeparator("-")
+	}
 
 	table.SetHeader(board.tableHeaders)
 	for _, v := range board.tableRows {

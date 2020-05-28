@@ -36,31 +36,35 @@ Usage:
     batrak [options] -D <issue>
 
 Options:
-    -L --list         List issues using specified filter. You can specify <issue>
-                       identifier and see issue details.
-                       Combine this flag with -K (--kanban) and
-                       batrak will list issues in kanban board style.
-      -c <count>      Limit amount of issues. [default: 30]
-      -f <id>         Use specified filter identifier.
-      -w --show-name  Show issue assignee username instead of "Display Name".
-    -A --assign       Assign specified issue.
-    -S --start        Start working on specified issue.
-    -T --terminate    Stop working on specified issue.
-    -M --move         Move specified issue or list available transitions.
-    -D --delete       Delete specified issue.
-    -R --rename       Change specified issue title to <title>. If new <title>
-                       value starts with s/ then <title> will be used as
-                       expression to sed with old title value as input.
-    -C --comments     Create comment to specified issue.
-                       Combine this flag with -L (--list) and
-                       batrak will list comments to specified issue.
-                       Combine this flag with -D (--delete) and
-                       batrak will delete specified comment to specified issue.
-  --config <path>     Use specified configuration file.
-                       [default: $HOME/.batrakrc]
-  -p <project>        Use specified project name instead of config.
-  --workflow <path>   Rewrite configuration workflow using specified file.
-  -v --version        Show version of the program.
+    -L --list            List issues using specified filter. You can specify <issue>
+                          identifier and see issue details.
+                          Combine this flag with -K (--kanban) and
+                          batrak will list issues in kanban board style.
+      -c <count>         Limit amount of issues. [default: 30]
+      -f <id>            Use specified filter identifier.
+      -w --show-name     Show issue assignee username instead of "Display Name".
+      -m --my            Show only my issues.
+      -q --query <jql>   Specify Jira Query.
+     -K --kanban         List issues as a Kanban board.
+      -s --show-summary  Show summary in Kanban mode.
+    -A --assign          Assign specified issue.
+    -S --start           Start working on specified issue.
+    -T --terminate       Stop working on specified issue.
+    -M --move            Move specified issue or list available transitions.
+    -D --delete          Delete specified issue.
+    -R --rename          Change specified issue title to <title>. If new <title>
+                          value starts with s/ then <title> will be used as
+                          expression to sed with old title value as input.
+    -C --comments        Create comment to specified issue.
+                          Combine this flag with -L (--list) and
+                          batrak will list comments to specified issue.
+                          Combine this flag with -D (--delete) and
+                          batrak will delete specified comment to specified issue.
+  --config <path>        Use specified configuration file.
+                          [default: $HOME/.batrakrc]
+  -p <project>           Use specified project name instead of config.
+  --workflow <path>      Rewrite configuration workflow using specified file.
+  -v --version           Show version of the program.
 `
 
 	return docopt.Parse(os.ExpandEnv(usage), nil, true, "Batrak 3.3", false)
@@ -172,12 +176,15 @@ func main() {
 		}
 
 		var (
-			kanbanMode     = args["-K"].(bool)
+			kanbanMode     = args["--kanban"].(bool)
 			rawLimit, _    = args["-c"].(string)
 			rawFilterID, _ = args["-f"].(string)
 			limit, _       = strconv.Atoi(rawLimit)
 			filterID, _    = strconv.Atoi(rawFilterID)
 			showName       = args["--show-name"].(bool)
+			onlyMy         = args["--my"].(bool)
+			query, _       = args["--query"].(string)
+			showSummary, _ = args["--show-summary"].(bool)
 		)
 
 		err = handleListMode(
@@ -186,6 +193,9 @@ func main() {
 			kanbanMode,
 			config,
 			showName,
+			showSummary,
+			onlyMy,
+			query,
 		)
 
 	case moveMode:
@@ -209,6 +219,9 @@ func handleListMode(
 	kanbanMode bool,
 	config *Configuration,
 	showName bool,
+	showSummary bool,
+	onlyMy bool,
+	query string,
 ) error {
 	var (
 		search *gojira.JiraSearchIssues
@@ -228,17 +241,27 @@ func handleListMode(
 			)
 		}
 	} else {
-		jiraUser, err := gojira.Myself()
-		if err != nil {
-			return karma.Format(
-				err,
-				"unable to get current user info",
-			)
+		chunks := []string{}
+
+		if query != "" {
+			chunks = append(chunks, "("+query+")")
 		}
 
-		search, err = searchIssues(
-			jiraUser.Name, config.ProjectName, limit,
-		)
+		if onlyMy {
+			jiraUser, err := gojira.Myself()
+			if err != nil {
+				return karma.Format(
+					err,
+					"unable to get current user info",
+				)
+			}
+
+			chunks = append(chunks, "assignee = "+jiraUser.Name)
+		}
+
+		jql := strings.Join(chunks, " AND ")
+
+		search, err = getIssues(config.ProjectName, jql, limit)
 		if err != nil {
 			return karma.Format(
 				err,
@@ -256,7 +279,7 @@ func handleListMode(
 		workflowStages := config.Workflow.Stages
 		sort.Sort(KanbanOrderSortableStages(workflowStages))
 
-		board, err := NewKanbanBoard(search.Issues, workflowStages)
+		board, err := NewKanbanBoard(search.Issues, workflowStages, showSummary)
 		if err != nil {
 			return err
 		}

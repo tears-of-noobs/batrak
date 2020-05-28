@@ -2,32 +2,45 @@ package main
 
 import (
 	"encoding/json"
+	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/tears-of-noobs/gojira"
 )
 
-func searchIssues(
-	username string,
+func getIssues(
 	projectName string,
-	issueListCount int,
+	query string,
+	limit int,
 ) (*gojira.JiraSearchIssues, error) {
-	searchQuery := "project%20%3D%20" + projectName +
-		"%20AND%20assignee%20%3D%20" + username + "%20order%20by%20updated%20DESC" +
-		"&fields=key,summary,status,assignee&maxResults=" + strconv.Itoa(issueListCount)
+	params := []string{
+		"project = " + projectName,
+	}
 
-	jsonedSearchIssues, err := gojira.RawSearch(searchQuery)
+	if query != "" {
+		params = append(params, "("+query+")")
+	}
+
+	sort := "ORDER BY updated DESC"
+
+	jql := strings.Join(params, " AND ") + " " + sort
+
+	request := url.QueryEscape(jql) +
+		"&fields=key,summary,status,assignee&maxResults=" + strconv.Itoa(limit)
+
+	reply, err := gojira.RawSearch(request)
 	if err != nil {
 		return nil, err
 	}
 
-	var searchIssues gojira.JiraSearchIssues
-	err = json.Unmarshal(jsonedSearchIssues, &searchIssues)
+	var result gojira.JiraSearchIssues
+	err = json.Unmarshal(reply, &result)
 	if err != nil {
 		return nil, err
 	}
 
-	return &searchIssues, nil
+	return &result, nil
 }
 
 func searchIssuesByFilterID(
