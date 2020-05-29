@@ -116,8 +116,11 @@ func (board kanbanBoard) Display() {
 	table := tablewriter.NewWriter(os.Stdout)
 	if board.showSummary {
 		table.SetRowLine(true)
-		table.SetRowSeparator("-")
 	}
+
+	table.SetRowSeparator("─")
+	table.SetCenterSeparator("+")
+	table.SetColumnSeparator("│")
 
 	table.SetHeader(board.tableHeaders)
 	for _, v := range board.tableRows {
