@@ -45,6 +45,7 @@ Options:
       -w --show-name     Show issue assignee username instead of "Display Name".
       -m --my            Show only my issues.
       -q --query <jql>   Specify Jira Query.
+      -o --order <jql>   Specify order by fields.
      -K --kanban         List issues as a Kanban board.
       -s --show-summary  Show summary in Kanban mode.
     -A --assign          Assign specified issue.
@@ -184,6 +185,7 @@ func main() {
 			showName       = args["--show-name"].(bool)
 			onlyMy         = args["--my"].(bool)
 			query, _       = args["--query"].(string)
+			order, _       = args["--order"].(string)
 			showSummary, _ = args["--show-summary"].(bool)
 		)
 
@@ -196,6 +198,7 @@ func main() {
 			showSummary,
 			onlyMy,
 			query,
+			order,
 		)
 
 	case moveMode:
@@ -222,6 +225,7 @@ func handleListMode(
 	showSummary bool,
 	onlyMy bool,
 	query string,
+	order string,
 ) error {
 	var (
 		search *gojira.JiraSearchIssues
@@ -241,11 +245,7 @@ func handleListMode(
 			)
 		}
 	} else {
-		chunks := []string{}
-
-		if query != "" {
-			chunks = append(chunks, "("+query+")")
-		}
+		jql := query
 
 		if onlyMy {
 			jiraUser, err := gojira.Myself()
@@ -256,12 +256,25 @@ func handleListMode(
 				)
 			}
 
-			chunks = append(chunks, "assignee = "+jiraUser.Name)
+			if jql != "" {
+				jql = " AND (" + jql + ")"
+			}
+
+			jql = "assignee = " + jiraUser.Name + jql
 		}
 
-		jql := strings.Join(chunks, " AND ")
+		jql = "project = " + config.ProjectName
+		if jql != "" {
+			jql += " AND (" + jql + ")"
+		}
 
-		search, err = getIssues(config.ProjectName, jql, limit)
+		if order != "" {
+			jql += " ORDER BY " + order
+		} else {
+			jql += " ORDER BY updated DESC"
+		}
+
+		search, err = getIssues(jql, limit)
 		if err != nil {
 			return karma.Format(
 				err,

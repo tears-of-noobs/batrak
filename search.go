@@ -4,29 +4,15 @@ import (
 	"encoding/json"
 	"net/url"
 	"strconv"
-	"strings"
 
 	"github.com/tears-of-noobs/gojira"
 )
 
 func getIssues(
-	projectName string,
 	query string,
 	limit int,
 ) (*gojira.JiraSearchIssues, error) {
-	params := []string{
-		"project = " + projectName,
-	}
-
-	if query != "" {
-		params = append(params, "("+query+")")
-	}
-
-	sort := "ORDER BY updated DESC"
-
-	jql := strings.Join(params, " AND ") + " " + sort
-
-	request := url.QueryEscape(jql) +
+	request := url.QueryEscape(query) +
 		"&fields=key,summary,status,assignee&maxResults=" + strconv.Itoa(limit)
 
 	reply, err := gojira.RawSearch(request)
