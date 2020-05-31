@@ -245,7 +245,11 @@ func handleListMode(
 			)
 		}
 	} else {
-		jql := query
+		chunks := []string{}
+
+		if query != "" {
+			chunks = append(chunks, "("+query+")")
+		}
 
 		if onlyMy {
 			jiraUser, err := gojira.Myself()
@@ -256,17 +260,12 @@ func handleListMode(
 				)
 			}
 
-			if jql != "" {
-				jql = " AND (" + jql + ")"
-			}
-
-			jql = "assignee = " + jiraUser.Name + jql
+			chunks = append(chunks, "assignee = "+jiraUser.Name)
 		}
 
-		jql = "project = " + config.ProjectName
-		if jql != "" {
-			jql += " AND (" + jql + ")"
-		}
+		chunks = append(chunks, "project = "+config.ProjectName)
+
+		jql := strings.Join(chunks, " AND ")
 
 		if order != "" {
 			jql += " ORDER BY " + order
