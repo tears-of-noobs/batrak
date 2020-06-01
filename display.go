@@ -29,7 +29,7 @@ func displayIssues(
 	var err error
 
 	buffer := bytes.NewBuffer(nil)
-	board := tabwriter.NewWriter(buffer, 1, 4, 2, ' ', tabwriter.FilterHTML)
+	board := tabwriter.NewWriter(buffer, 1, 4, 2, ' ', 0)
 
 	templates := map[string]*template.Template{}
 
