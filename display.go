@@ -12,18 +12,23 @@ import (
 	"github.com/tears-of-noobs/gojira"
 )
 
-var (
-	DefaultTemplate = template.Must(
-		template.New("default").Parse(
-			"{{.mark}}{{.key}}\t{{.stage}}\t{{.name}}\t{{.summary}}",
-		),
-	)
+var DefaultTemplate = template.Must(
+	template.New("default").Parse(
+		"{{.mark}}{{.key}}\t{{.stage}}\t{{.name}}\t{{.summary}}",
+	),
+)
+
+var OnlySummaryTemplate = template.Must(
+	template.New("only-summary").Parse(
+		"{{.summary}}",
+	),
 )
 
 func displayIssues(
 	issues []gojira.Issue,
 	activeIssueKey string,
 	showName bool,
+	onlySummary bool,
 	workflow Workflow,
 ) error {
 	var err error
@@ -58,19 +63,22 @@ func displayIssues(
 		}
 
 		tpl := DefaultTemplate
-
-		if stage, ok := workflow.GetStage(issue.Fields.Status.Name); ok {
-			if stage.Template != "" {
-				tpl, ok = templates[issue.Fields.Status.Name]
-				if !ok {
-					tpl = template.New(issue.Fields.Status.Name)
-					tpl, err = tpl.Parse(stage.Template)
-					if err != nil {
-						return karma.Format(
-							err,
-							"unable to parse template: %s",
-							issue.Fields.Status.Name,
-						)
+		if onlySummary {
+			tpl = OnlySummaryTemplate
+		} else {
+			if stage, ok := workflow.GetStage(issue.Fields.Status.Name); ok {
+				if stage.Template != "" {
+					tpl, ok = templates[issue.Fields.Status.Name]
+					if !ok {
+						tpl = template.New(issue.Fields.Status.Name)
+						tpl, err = tpl.Parse(stage.Template)
+						if err != nil {
+							return karma.Format(
+								err,
+								"unable to parse template: %s",
+								issue.Fields.Status.Name,
+							)
+						}
 					}
 				}
 			}

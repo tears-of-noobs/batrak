@@ -46,6 +46,7 @@ Options:
       -m --my            Show only my issues.
       -q --query <jql>   Specify Jira Query.
       -o --order <jql>   Specify order by fields.
+      --only-summary     Show only issue summary.
      -K --kanban         List issues as a Kanban board.
       -s --show-summary  Show summary in Kanban mode.
     -A --assign          Assign specified issue.
@@ -187,6 +188,7 @@ func main() {
 			query, _       = args["--query"].(string)
 			order, _       = args["--order"].(string)
 			showSummary, _ = args["--show-summary"].(bool)
+			onlySummary, _ = args["--only-summary"].(bool)
 		)
 
 		err = handleListMode(
@@ -197,6 +199,7 @@ func main() {
 			showName,
 			showSummary,
 			onlyMy,
+			onlySummary,
 			query,
 			order,
 		)
@@ -224,6 +227,7 @@ func handleListMode(
 	showName bool,
 	showSummary bool,
 	onlyMy bool,
+	onlySummary bool,
 	query string,
 	order string,
 ) error {
@@ -304,7 +308,7 @@ func handleListMode(
 	} else {
 		return displayIssues(
 			sortIssuesByStatus(search.Issues, config.Workflow.Stages),
-			activeIssueKey, showName,
+			activeIssueKey, showName, onlySummary,
 			config.Workflow,
 		)
 	}
