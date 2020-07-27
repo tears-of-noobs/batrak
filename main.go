@@ -34,39 +34,41 @@ Usage:
     batrak [options] -C -L <issue>
     batrak [options] -C -L <issue> -R <comment>
     batrak [options] -D <issue>
+    batrak [options] -N <project> <issuetype>
 
 Options:
-    -L --list            List issues using specified filter. You can specify <issue>
-                          identifier and see issue details.
-                          Combine this flag with -K (--kanban) and
-                          batrak will list issues in kanban board style.
-      -c <count>         Limit amount of issues. [default: 30]
-      -f <id>            Use specified filter identifier.
-      -w --show-name     Show issue assignee username instead of "Display Name".
-      -m --my            Show only my issues.
-      -q --query <jql>   Specify Jira Query.
-      -o --order <jql>   Specify order by fields.
-      --only-summary     Show only issue summary.
-     -K --kanban         List issues as a Kanban board.
-      -s --show-summary  Show summary in Kanban mode.
-    -A --assign          Assign specified issue.
-    -S --start           Start working on specified issue.
-    -T --terminate       Stop working on specified issue.
-    -M --move            Move specified issue or list available transitions.
-    -D --delete          Delete specified issue.
-    -R --rename          Change specified issue title to <title>. If new <title>
-                          value starts with s/ then <title> will be used as
-                          expression to sed with old title value as input.
-    -C --comments        Create comment to specified issue.
-                          Combine this flag with -L (--list) and
-                          batrak will list comments to specified issue.
-                          Combine this flag with -D (--delete) and
-                          batrak will delete specified comment to specified issue.
-  --config <path>        Use specified configuration file.
-                          [default: $HOME/.batrakrc]
-  -p <project>           Use specified project name instead of config.
-  --workflow <path>      Rewrite configuration workflow using specified file.
-  -v --version           Show version of the program.
+  -L --list            List issues using specified filter. You can specify <issue>
+                        identifier and see issue details.
+                        Combine this flag with -K (--kanban) and
+                        batrak will list issues in kanban board style.
+    -c <count>         Limit amount of issues. [default: 30]
+    -f <id>            Use specified filter identifier.
+    -w --show-name     Show issue assignee username instead of "Display Name".
+    -m --my            Show only my issues.
+    -q --query <jql>   Specify Jira Query.
+    -o --order <jql>   Specify order by fields.
+    --only-summary     Show only issue summary.
+   -K --kanban         List issues as a Kanban board.
+    -s --show-summary  Show summary in Kanban mode.
+  -N --new             New issue in the specified <project>.
+  -A --assign          Assign specified issue.
+  -S --start           Start working on specified issue.
+  -T --terminate       Stop working on specified issue.
+  -M --move            Move specified issue or list available transitions.
+  -D --delete          Delete specified issue.
+  -R --rename          Change specified issue title to <title>. If new <title>
+                        value starts with s/ then <title> will be used as
+                        expression to sed with old title value as input.
+  -C --comments        Create comment to specified issue.
+                        Combine this flag with -L (--list) and
+                        batrak will list comments to specified issue.
+                        Combine this flag with -D (--delete) and
+                        batrak will delete specified comment to specified issue.
+  --config <path>      Use specified configuration file.
+                        [default: $HOME/.batrakrc]
+  -p <project>         Use specified project name instead of config.
+  --workflow <path>    Rewrite configuration workflow using specified file.
+  -v --version         Show version of the program.
 `
 
 	return docopt.Parse(os.ExpandEnv(usage), nil, true, "Batrak 3.3", false)
@@ -143,6 +145,7 @@ func main() {
 		commentsMode  = args["--comments"].(bool)
 		deleteMode    = args["--delete"].(bool)
 		renameMode    = args["--rename"].(bool)
+		createMode    = args["--new"].(bool)
 	)
 
 	switch {
@@ -205,12 +208,14 @@ func main() {
 		)
 
 	case moveMode:
-		transition := ""
-		if args["<transition>"] != nil {
-			transition = args["<transition>"].(string)
-		}
+		transition, _ := args["<transition>"].(string)
 
 		err = handleMoveMode(issue, transition)
+
+	case createMode:
+		issueType, _ := args["<issuetype>"].(string)
+		project, _ := args["<project>"].(string)
+		err = handleCreateMode(project, issueType)
 	}
 
 	if err != nil {
@@ -422,7 +427,7 @@ func handleAssignMode(
 }
 
 func handleCommentsMode(
-	issue *gojira.Issue, listMode bool, deleteMode bool, rawCommentID string,
+	issue *gojira.Issue, listMode, deleteMode bool, rawCommentID string,
 ) error {
 	switch {
 	case deleteMode:

@@ -3,7 +3,7 @@ package main
 import "github.com/tears-of-noobs/gojira"
 
 func addComment(issue *gojira.Issue) error {
-	comment, err := editTemporaryFile(issue.Key + "-batrak-issue-comment")
+	comment, err := editTemporaryFile("", issue.Key+".batrak")
 	if err != nil {
 		return err
 	}

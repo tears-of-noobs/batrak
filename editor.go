@@ -6,10 +6,19 @@ import (
 	"os/exec"
 )
 
-func editTemporaryFile(suffix string) (string, error) {
-	temporaryFile, err := ioutil.TempFile(os.TempDir(), suffix)
+func editTemporaryFile(preface, suffix string) (string, error) {
+	temporaryFile, err := ioutil.TempFile(os.TempDir(), "*"+suffix)
 	if err != nil {
 		return "", err
+	}
+
+	if preface != "" {
+		_, err = temporaryFile.WriteString(preface)
+		if err != nil {
+			return "", err
+		}
+
+		temporaryFile.Seek(0, 0)
 	}
 
 	defer temporaryFile.Close()

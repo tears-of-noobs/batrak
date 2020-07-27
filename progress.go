@@ -64,7 +64,7 @@ func stopProgress(issue *gojira.Issue, hooks Hooks) error {
 		switch strings.Trim(strings.ToUpper(userAnswer), "\n") {
 		case "Y":
 			worklogMessage, err := editTemporaryFile(
-				issue.Key + "-worklog-message.tmp",
+				"", issue.Key+".batrak",
 			)
 			if err != nil {
 				return err
@@ -135,10 +135,10 @@ func setActiveIssueKey(issueKey string) error {
 		return os.Remove(filename)
 	}
 
-	return ioutil.WriteFile(filename, []byte(issueKey), 0700)
+	return ioutil.WriteFile(filename, []byte(issueKey), 0o700)
 }
 
-func getActiveIssueTime() (hours int, minutes int, err error) {
+func getActiveIssueTime() (hours, minutes int, err error) {
 	filename, err := getActiveIssueFilename()
 	if err != nil {
 		return 0, 0, err
@@ -172,7 +172,7 @@ func getActiveIssueFilename() (string, error) {
 			return "", nil
 		}
 
-		err = os.Mkdir(batrakDirectory, 0700)
+		err = os.Mkdir(batrakDirectory, 0o700)
 		if err != nil {
 			return "", err
 		}
