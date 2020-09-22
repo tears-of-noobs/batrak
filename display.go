@@ -67,6 +67,10 @@ func displayIssues(
 			tpl = OnlySummaryTemplate
 		} else {
 			if stage, ok := workflow.GetStage(issue.Fields.Status.Name); ok {
+				// skip the issue if the stage's order is -1
+				if stage.Order == -1 {
+					continue
+				}
 				if stage.Template != "" {
 					tpl, ok = templates[issue.Fields.Status.Name]
 					if !ok {
