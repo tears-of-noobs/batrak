@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"strings"
 	"text/tabwriter"
 	"text/template"
 
@@ -105,7 +106,7 @@ func displayIssues(
 	loreley.DelimRight = ">"
 
 	result, err := loreley.CompileAndExecuteToString(
-		buffer.String(),
+		strings.NewReplacer("<", `<"<">`).Replace(buffer.String()),
 		nil,
 		nil,
 	)

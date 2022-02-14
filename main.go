@@ -261,15 +261,7 @@ func handleListMode(
 		}
 
 		if onlyMy {
-			jiraUser, err := gojira.Myself()
-			if err != nil {
-				return karma.Format(
-					err,
-					"unable to get current user info",
-				)
-			}
-
-			chunks = append(chunks, "assignee = "+jiraUser.Name)
+			chunks = append(chunks, "assignee = currentUser()")
 		}
 
 		chunks = append(chunks, "project = "+config.ProjectName)
